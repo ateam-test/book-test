@@ -60,6 +60,18 @@
 
   * { box-sizing: border-box; }
 
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   body {
     background: var(--parchment);
     color: var(--ink);
@@ -85,19 +97,36 @@
     padding: 3rem 1.25rem;
     position: relative;
   }
-  .seal {
-    width: clamp(64px, 18vw, 92px);
-    height: clamp(64px, 18vw, 92px);
-    margin-bottom: 1.75rem;
-    opacity: 0.9;
+  .cover-art {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto 2rem;
   }
-  .eyebrow {
-    font-family: var(--font-utility);
-    text-transform: uppercase;
-    letter-spacing: 0.35em;
-    font-size: 0.7rem;
-    color: var(--gold);
-    margin: 0 0 1rem;
+  .cover-art img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 734 / 1024;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--rule);
+    box-shadow: 0 22px 44px -16px var(--shadow), 0 6px 14px -6px var(--shadow);
+  }
+  .cover-art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 4px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0) 7%);
+    pointer-events: none;
+  }
+  .seal {
+    width: clamp(48px, 14vw, 64px);
+    height: clamp(48px, 14vw, 64px);
+    margin: 0 auto 0.85rem;
+    opacity: 0.85;
+    display: block;
   }
   .cover h1 {
     font-family: var(--font-display);
@@ -298,12 +327,11 @@
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .cover h1, .tagline, .byline, .seal {
+    .cover-art, .tagline, .byline {
       animation: rise 0.9s ease-out both;
     }
     .tagline { animation-delay: 0.15s; }
     .byline { animation-delay: 0.3s; }
-    .seal { animation-delay: 0s; }
   }
   @keyframes rise {
     from { opacity: 0; transform: translateY(10px); }
@@ -322,7 +350,6 @@
       padding-bottom: 2rem;
     }
     .byline { letter-spacing: 0.12em; }
-    .eyebrow { letter-spacing: 0.25em; }
     .divider { letter-spacing: 0.7em; }
     .toc-entry .toc-head {
       flex-wrap: wrap;
@@ -334,15 +361,15 @@
 <div class="book">
 
   <section class="cover">
-    <svg class="seal" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="50" cy="50" r="46" fill="none" stroke="var(--gold)" stroke-width="1.5" />
-      <circle cx="50" cy="50" r="36" fill="none" stroke="var(--gold)" stroke-width="1" />
-      <path d="M50 20 L58 44 L82 44 L62 58 L70 82 L50 67 L30 82 L38 58 L18 44 L42 44 Z"
-            fill="none" stroke="var(--ember)" stroke-width="1.4" stroke-linejoin="round" />
-      <circle cx="50" cy="50" r="4" fill="var(--forest)" />
-    </svg>
-    <p class="eyebrow">A Novel</p>
-    <h1>The Ashbound Heir</h1>
+    <div class="cover-art">
+      <img
+        src="assets/cover-front.jpg"
+        alt="Cover of The Ashbound Heir: two cloaked figures channeling opposing light and fire before a mountain castle at dusk"
+        width="734" height="1024"
+        loading="eager" fetchpriority="high"
+      />
+    </div>
+    <h1 class="sr-only">The Ashbound Heir</h1>
     <p class="tagline">
       The gate remembers every hand that opens it. It has just remembered his.
     </p>
@@ -461,6 +488,15 @@
     </div>
   </section>
 
-  <p class="colophon">The Ashbound Heir &middot; placeholder scaffold &middot; more chapters to follow</p>
+  <div class="colophon">
+    <svg class="seal" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="50" cy="50" r="46" fill="none" stroke="var(--gold)" stroke-width="1.5" />
+      <circle cx="50" cy="50" r="36" fill="none" stroke="var(--gold)" stroke-width="1" />
+      <path d="M50 20 L58 44 L82 44 L62 58 L70 82 L50 67 L30 82 L38 58 L18 44 L42 44 Z"
+            fill="none" stroke="var(--ember)" stroke-width="1.4" stroke-linejoin="round" />
+      <circle cx="50" cy="50" r="4" fill="var(--forest)" />
+    </svg>
+    <p>The Ashbound Heir &middot; placeholder scaffold &middot; more chapters to follow</p>
+  </div>
 
 </div>
