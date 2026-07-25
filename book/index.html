@@ -1,0 +1,436 @@
+<title>The Ashbound Heir</title>
+<meta name="description" content="A YA fantasy novel — cover, contents, and first three chapters." />
+<style>
+  :root {
+    --parchment: #ece1c4;
+    --parchment-raised: #f4ecd6;
+    --ink: #2a2118;
+    --ink-soft: #55492f;
+    --forest: #1e4430;
+    --forest-soft: #3c6b4d;
+    --gold: #96731f;
+    --ember: #8f3226;
+    --rule: #b7a878;
+    --shadow: rgba(30, 22, 10, 0.18);
+
+    --font-display: Palatino, "Palatino Linotype", "Iowan Old Style", Georgia, serif;
+    --font-body: Georgia, "Iowan Old Style", Palatino, "Palatino Linotype", serif;
+    --font-utility: "Century Gothic", "Trebuchet MS", "Segoe UI", sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --parchment: #14150f;
+      --parchment-raised: #1b1c14;
+      --ink: #e6dcc0;
+      --ink-soft: #b6ab8b;
+      --forest: #7fae8d;
+      --forest-soft: #5c8d70;
+      --gold: #d8b568;
+      --ember: #c9695a;
+      --rule: #3c3a2c;
+      --shadow: rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --parchment: #14150f;
+    --parchment-raised: #1b1c14;
+    --ink: #e6dcc0;
+    --ink-soft: #b6ab8b;
+    --forest: #7fae8d;
+    --forest-soft: #5c8d70;
+    --gold: #d8b568;
+    --ember: #c9695a;
+    --rule: #3c3a2c;
+    --shadow: rgba(0, 0, 0, 0.5);
+  }
+  :root[data-theme="light"] {
+    --parchment: #ece1c4;
+    --parchment-raised: #f4ecd6;
+    --ink: #2a2118;
+    --ink-soft: #55492f;
+    --forest: #1e4430;
+    --forest-soft: #3c6b4d;
+    --gold: #96731f;
+    --ember: #8f3226;
+    --rule: #b7a878;
+    --shadow: rgba(30, 22, 10, 0.18);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: var(--font-body);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .book {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* ---------- Cover ---------- */
+  .cover {
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 1.5rem;
+    position: relative;
+  }
+  .seal {
+    width: 92px;
+    height: 92px;
+    margin-bottom: 1.75rem;
+    opacity: 0.9;
+  }
+  .eyebrow {
+    font-family: var(--font-utility);
+    text-transform: uppercase;
+    letter-spacing: 0.35em;
+    font-size: 0.7rem;
+    color: var(--gold);
+    margin: 0 0 1rem;
+  }
+  .cover h1 {
+    font-family: var(--font-display);
+    font-variant: small-caps;
+    font-size: clamp(2.4rem, 7vw, 4.6rem);
+    line-height: 1.05;
+    letter-spacing: 0.05em;
+    margin: 0 0 1rem;
+    color: var(--forest);
+    text-wrap: balance;
+  }
+  .tagline {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
+    max-width: 34rem;
+    margin: 0 0 2.25rem;
+    text-wrap: balance;
+  }
+  .byline {
+    font-family: var(--font-utility);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
+  .byline em {
+    font-style: normal;
+    color: var(--gold);
+  }
+  .scroll-cue {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-utility);
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    opacity: 0.7;
+  }
+
+  /* ---------- Contents ---------- */
+  .contents {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 3rem;
+    border-top: 1px solid var(--rule);
+  }
+  .contents h2 {
+    font-family: var(--font-utility);
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    font-size: 0.8rem;
+    color: var(--gold);
+    text-align: center;
+    margin: 0 0 2rem;
+  }
+  .toc-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 1.1rem 0;
+    border-bottom: 1px dotted var(--rule);
+    text-decoration: none;
+    color: inherit;
+  }
+  .toc-entry:first-child { padding-top: 0; }
+  .toc-entry .toc-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+  .toc-entry .toc-title {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    letter-spacing: 0.03em;
+    color: var(--forest);
+  }
+  .toc-entry .toc-num {
+    font-family: var(--font-utility);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .toc-entry .toc-teaser {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- Chapters ---------- */
+  .chapter {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 2.5rem;
+    border-top: 1px solid var(--rule);
+    scroll-margin-top: 1.5rem;
+  }
+  .back-link {
+    display: inline-block;
+    font-family: var(--font-utility);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+  }
+  .chapter h2 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 0.12em;
+    font-size: clamp(1.3rem, 3.4vw, 1.7rem);
+    margin: 0 0 0.75rem;
+  }
+  .divider {
+    text-align: center;
+    color: var(--gold);
+    font-size: 0.9rem;
+    letter-spacing: 1.2em;
+    margin: 0 0 2rem;
+  }
+  .divider::before,
+  .divider::after {
+    content: "\2766";
+  }
+  .chapter p {
+    font-size: 1.08rem;
+    line-height: 1.75;
+    margin: 0 0 1.1rem;
+  }
+  .chapter p.lede::first-letter {
+    font-family: var(--font-display);
+    font-size: 3.4rem;
+    float: left;
+    line-height: 0.78;
+    padding: 0.06em 0.12em 0 0;
+    color: var(--ember);
+  }
+  .placeholder-note {
+    font-family: var(--font-utility);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    opacity: 0.6;
+    margin: 2rem 0 0;
+  }
+  .chapter-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-utility);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .chapter-nav a { color: var(--forest); text-decoration: none; }
+  .chapter-nav .disabled { color: var(--ink-soft); opacity: 0.45; }
+  .chapter-nav .to-toc {
+    color: var(--gold);
+    text-align: center;
+  }
+
+  .colophon {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+    text-align: center;
+    font-family: var(--font-utility);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--rule);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cover h1, .tagline, .byline, .seal {
+      animation: rise 0.9s ease-out both;
+    }
+    .tagline { animation-delay: 0.15s; }
+    .byline { animation-delay: 0.3s; }
+    .seal { animation-delay: 0s; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  a:focus-visible, .toc-entry:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+  }
+</style>
+
+<div class="book">
+
+  <section class="cover">
+    <svg class="seal" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="50" cy="50" r="46" fill="none" stroke="var(--gold)" stroke-width="1.5" />
+      <circle cx="50" cy="50" r="36" fill="none" stroke="var(--gold)" stroke-width="1" />
+      <path d="M50 20 L58 44 L82 44 L62 58 L70 82 L50 67 L30 82 L38 58 L18 44 L42 44 Z"
+            fill="none" stroke="var(--ember)" stroke-width="1.4" stroke-linejoin="round" />
+      <circle cx="50" cy="50" r="4" fill="var(--forest)" />
+    </svg>
+    <p class="eyebrow">A Novel</p>
+    <h1>The Ashbound Heir</h1>
+    <p class="tagline">
+      The gate remembers every hand that opens it. It has just remembered his.
+    </p>
+    <p class="byline">Draft manuscript &middot; <em>working title</em></p>
+    <p class="scroll-cue">&darr; contents</p>
+  </section>
+
+  <section class="contents" id="toc">
+    <h2>Contents</h2>
+
+    <a class="toc-entry" href="#chapter-1">
+      <span class="toc-head">
+        <span class="toc-title">I &middot; The Ember Gate</span>
+        <span class="toc-num">Ch. 01</span>
+      </span>
+      <span class="toc-teaser">A boy opens a door that was never meant for him.</span>
+    </a>
+
+    <a class="toc-entry" href="#chapter-2">
+      <span class="toc-head">
+        <span class="toc-title">II &middot; The Wolf and the Crown</span>
+        <span class="toc-num">Ch. 02</span>
+      </span>
+      <span class="toc-teaser">A stranger's warning arrives a day too late.</span>
+    </a>
+
+    <a class="toc-entry" href="#chapter-3">
+      <span class="toc-head">
+        <span class="toc-title">III &middot; What the Old Maps Hide</span>
+        <span class="toc-num">Ch. 03</span>
+      </span>
+      <span class="toc-teaser">The library keeps one book that isn't on any shelf.</span>
+    </a>
+  </section>
+
+  <section class="chapter" id="chapter-1">
+    <a class="back-link" href="#toc">&larr; Contents</a>
+    <h2>I &middot; The Ember Gate</h2>
+    <div class="divider"></div>
+    <p class="lede">
+      Rowan had never meant to open the gate. It simply opened for him, the way old doors
+      do when they recognize a hand descended from the ones who built them — reluctantly,
+      and with a great deal of dust. He had only leaned against it to catch his breath, and
+      the iron had gone warm under his palm like something waking from a long sleep.
+    </p>
+    <p>
+      Beyond it, the wards flickered like breath on cold glass, and somewhere far below the
+      hill, something that had waited a very long time finally began to stir. He told
+      himself it was the wind. He told himself that twice more before he stopped believing
+      it.
+    </p>
+    <p>
+      By the time he reached the bottom of the hill, the lanterns of Ashbourne were already
+      lit, small and stubborn against the dark, and none of them knew yet what he had let
+      through.
+    </p>
+    <p class="placeholder-note">— placeholder chapter text, to be replaced with the manuscript —</p>
+    <div class="chapter-nav">
+      <span class="disabled">&larr; Previous</span>
+      <a class="to-toc" href="#toc">Contents</a>
+      <a href="#chapter-2">Next &rarr;</a>
+    </div>
+  </section>
+
+  <section class="chapter" id="chapter-2">
+    <a class="back-link" href="#toc">&larr; Contents</a>
+    <h2>II &middot; The Wolf and the Crown</h2>
+    <div class="divider"></div>
+    <p class="lede">
+      The letter came on the back of a hawk with a temper, and by the time Mireille had
+      wrestled it free of the bird's talons, half the wax seal had already cracked. It bore
+      no name, only a pressed sprig of rowan and a single line: <em>they have opened the
+      gate</em>.
+    </p>
+    <p>
+      She read it twice standing in the kitchen doorway, once more sitting down, and did
+      not notice the kettle screaming until her mother came in and lifted it herself.
+      "Who's it from?" her mother asked, and Mireille, who had spent six years pretending
+      she didn't remember the old stories, found she remembered every one of them at once.
+    </p>
+    <p>
+      By morning the road to Ashbourne was already busy with things that were not, strictly
+      speaking, travelers.
+    </p>
+    <p class="placeholder-note">— placeholder chapter text, to be replaced with the manuscript —</p>
+    <div class="chapter-nav">
+      <a href="#chapter-1">&larr; Previous</a>
+      <a class="to-toc" href="#toc">Contents</a>
+      <a href="#chapter-3">Next &rarr;</a>
+    </div>
+  </section>
+
+  <section class="chapter" id="chapter-3">
+    <a class="back-link" href="#toc">&larr; Contents</a>
+    <h2>III &middot; What the Old Maps Hide</h2>
+    <div class="divider"></div>
+    <p class="lede">
+      The librarian at Marrow Hall had told them, more than once, that there was no book by
+      that name — and each time she said it, she said it a little too quickly, and glanced
+      just slightly toward the locked case beneath the west window.
+    </p>
+    <p>
+      It was Rowan who finally asked her outright, and it was the ember-mark on his wrist,
+      newly raised and still tender, that made her set down her pen. "You'd best come after
+      hours, then," she said. "And bring the girl. Some doors only open for two."
+    </p>
+    <p>
+      What they found beneath the floorboards that night was not, in the end, a book at
+      all.
+    </p>
+    <p class="placeholder-note">— placeholder chapter text, to be replaced with the manuscript —</p>
+    <div class="chapter-nav">
+      <a href="#chapter-2">&larr; Previous</a>
+      <a class="to-toc" href="#toc">Contents</a>
+      <span class="disabled">Next &rarr;</span>
+    </div>
+  </section>
+
+  <p class="colophon">The Ashbound Heir &middot; placeholder scaffold &middot; more chapters to follow</p>
+
+</div>
