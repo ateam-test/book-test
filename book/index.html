@@ -1,4 +1,5 @@
 <title>The Ashbound Heir</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="description" content="A YA fantasy novel — cover, contents, and first three chapters." />
 <style>
   :root {
@@ -75,17 +76,18 @@
   /* ---------- Cover ---------- */
   .cover {
     min-height: 92vh;
+    min-height: 92svh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 3rem 1.5rem;
+    padding: 3rem 1.25rem;
     position: relative;
   }
   .seal {
-    width: 92px;
-    height: 92px;
+    width: clamp(64px, 18vw, 92px);
+    height: clamp(64px, 18vw, 92px);
     margin-bottom: 1.75rem;
     opacity: 0.9;
   }
@@ -207,7 +209,8 @@
     text-transform: uppercase;
     color: var(--gold);
     text-decoration: none;
-    margin-bottom: 1.5rem;
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
   }
   .chapter h2 {
     font-family: var(--font-display);
@@ -235,7 +238,7 @@
   }
   .chapter p.lede::first-letter {
     font-family: var(--font-display);
-    font-size: 3.4rem;
+    font-size: clamp(2.6rem, 11vw, 3.4rem);
     float: left;
     line-height: 0.78;
     padding: 0.06em 0.12em 0 0;
@@ -252,8 +255,11 @@
   }
   .chapter-nav {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    row-gap: 0.75rem;
+    column-gap: 1rem;
     margin-top: 2.5rem;
     padding-top: 1.25rem;
     border-top: 1px solid var(--rule);
@@ -262,11 +268,20 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
+  .chapter-nav a, .chapter-nav span {
+    display: inline-block;
+    padding: 0.5rem 0;
+  }
   .chapter-nav a { color: var(--forest); text-decoration: none; }
   .chapter-nav .disabled { color: var(--ink-soft); opacity: 0.45; }
   .chapter-nav .to-toc {
     color: var(--gold);
     text-align: center;
+    order: 3;
+    flex-basis: 100%;
+  }
+  @media (min-width: 420px) {
+    .chapter-nav .to-toc { order: 0; flex-basis: auto; }
   }
 
   .colophon {
@@ -298,6 +313,21 @@
   a:focus-visible, .toc-entry:focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 3px;
+  }
+
+  /* ---------- Small screens ---------- */
+  @media (max-width: 600px) {
+    .contents, .chapter, .colophon {
+      padding-top: 2.75rem;
+      padding-bottom: 2rem;
+    }
+    .byline { letter-spacing: 0.12em; }
+    .eyebrow { letter-spacing: 0.25em; }
+    .divider { letter-spacing: 0.7em; }
+    .toc-entry .toc-head {
+      flex-wrap: wrap;
+      row-gap: 0.15rem;
+    }
   }
 </style>
 
