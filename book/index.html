@@ -17,6 +17,9 @@
     --font-display: Palatino, "Palatino Linotype", "Iowan Old Style", Georgia, serif;
     --font-body: Georgia, "Iowan Old Style", Palatino, "Palatino Linotype", serif;
     --font-utility: "Century Gothic", "Trebuchet MS", "Segoe UI", sans-serif;
+
+    --reader-scale: 1;
+    --reader-leading: 1.75;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -57,6 +60,55 @@
     --rule: #b7a878;
     --shadow: rgba(30, 22, 10, 0.18);
   }
+
+  /* ---------- Reader-chosen theme (separate from the OS/platform theme above) ---------- */
+  :root[data-reading-theme="sepia"] {
+    --parchment: #ece1c4;
+    --parchment-raised: #f4ecd6;
+    --ink: #2a2118;
+    --ink-soft: #55492f;
+    --forest: #1e4430;
+    --forest-soft: #3c6b4d;
+    --gold: #96731f;
+    --ember: #8f3226;
+    --rule: #b7a878;
+    --shadow: rgba(30, 22, 10, 0.18);
+  }
+  :root[data-reading-theme="night"] {
+    --parchment: #14150f;
+    --parchment-raised: #1b1c14;
+    --ink: #e6dcc0;
+    --ink-soft: #b6ab8b;
+    --forest: #7fae8d;
+    --forest-soft: #5c8d70;
+    --gold: #d8b568;
+    --ember: #c9695a;
+    --rule: #3c3a2c;
+    --shadow: rgba(0, 0, 0, 0.5);
+  }
+  :root[data-reading-theme="paper"] {
+    --parchment: #f7f5ef;
+    --parchment-raised: #ffffff;
+    --ink: #1c1c1a;
+    --ink-soft: #52524c;
+    --forest: #234a37;
+    --forest-soft: #3f6b53;
+    --gold: #8a6a24;
+    --ember: #8a3527;
+    --rule: #cfcabb;
+    --shadow: rgba(20, 20, 15, 0.14);
+  }
+
+  :root[data-reader-font="sans"] {
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  :root[data-reader-size="s"] { --reader-scale: 0.9; }
+  :root[data-reader-size="m"] { --reader-scale: 1; }
+  :root[data-reader-size="l"] { --reader-scale: 1.15; }
+  :root[data-reader-size="xl"] { --reader-scale: 1.3; }
+  :root[data-reader-leading="compact"] { --reader-leading: 1.5; }
+  :root[data-reader-leading="cozy"] { --reader-leading: 1.75; }
+  :root[data-reader-leading="relaxed"] { --reader-leading: 2; }
 
   * { box-sizing: border-box; }
 
@@ -217,7 +269,7 @@
     white-space: nowrap;
   }
   .toc-entry .toc-teaser {
-    font-size: 0.9rem;
+    font-size: calc(0.9rem * var(--reader-scale));
     font-style: italic;
     color: var(--ink-soft);
   }
@@ -261,13 +313,13 @@
     content: "\2766";
   }
   .chapter p {
-    font-size: 1.08rem;
-    line-height: 1.75;
+    font-size: calc(1.08rem * var(--reader-scale));
+    line-height: var(--reader-leading);
     margin: 0 0 1.1rem;
   }
   .chapter p.lede::first-letter {
     font-family: var(--font-display);
-    font-size: clamp(2.6rem, 11vw, 3.4rem);
+    font-size: calc(clamp(2.6rem, 11vw, 3.4rem) * var(--reader-scale));
     float: left;
     line-height: 0.78;
     padding: 0.06em 0.12em 0 0;
@@ -343,6 +395,145 @@
     outline-offset: 3px;
   }
 
+  /* ---------- Progress bar ---------- */
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: var(--gold);
+    z-index: 80;
+    transition: width 0.1s linear;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .progress-bar { transition: none; }
+  }
+
+  /* ---------- Resume pill ---------- */
+  .resume-pill {
+    position: fixed;
+    top: 0.85rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    max-width: calc(100vw - 2rem);
+    background: var(--parchment-raised);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 0.5rem 0.6rem 0.5rem 1rem;
+    box-shadow: 0 10px 26px -10px var(--shadow);
+    font-family: var(--font-utility);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    z-index: 75;
+  }
+  .resume-pill[hidden] { display: none; }
+  .resume-pill button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    font-family: inherit;
+  }
+  .resume-pill .resume-open {
+    color: var(--forest);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: bold;
+    padding: 0.2rem 0;
+    white-space: nowrap;
+  }
+  .resume-pill .resume-dismiss {
+    color: var(--ink-soft);
+    font-size: 1.05rem;
+    line-height: 1;
+    padding: 0 0.15rem;
+  }
+
+  /* ---------- Reader settings control ---------- */
+  .reader-toggle {
+    position: fixed;
+    right: 1.1rem;
+    bottom: 1.1rem;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+    background: var(--parchment-raised);
+    color: var(--forest);
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -8px var(--shadow);
+    z-index: 80;
+  }
+  .reader-panel {
+    position: fixed;
+    right: 1.1rem;
+    bottom: 4.5rem;
+    width: min(280px, calc(100vw - 2.2rem));
+    background: var(--parchment-raised);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 20px 44px -14px var(--shadow);
+    z-index: 80;
+    font-family: var(--font-utility);
+  }
+  .reader-panel[hidden] { display: none; }
+  @media (max-width: 480px) {
+    .reader-panel {
+      right: 0.75rem;
+      left: 0.75rem;
+      width: auto;
+      bottom: 4.25rem;
+    }
+  }
+  .reader-group { margin-bottom: 0.9rem; }
+  .reader-group:last-child { margin-bottom: 0; }
+  .reader-label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.4rem;
+  }
+  .reader-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .reader-row button {
+    flex: 1;
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.72rem;
+    font-family: var(--font-utility);
+    letter-spacing: 0.03em;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .reader-row button[aria-pressed="true"] {
+    background: var(--forest);
+    border-color: var(--forest);
+    color: var(--parchment-raised);
+  }
+  .reader-row .size-label {
+    flex: 0 0 auto;
+    min-width: 1.6rem;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--ink);
+  }
+
   /* ---------- Small screens ---------- */
   @media (max-width: 600px) {
     .contents, .chapter, .colophon {
@@ -358,9 +549,65 @@
   }
 </style>
 
+<script>
+(function () {
+  try {
+    var raw = localStorage.getItem('ashbound-heir:settings');
+    var s = raw ? JSON.parse(raw) : {};
+    var root = document.documentElement;
+    root.setAttribute('data-reading-theme', s.theme || 'sepia');
+    root.setAttribute('data-reader-font', s.font || 'serif');
+    root.setAttribute('data-reader-size', s.size || 'm');
+    root.setAttribute('data-reader-leading', s.leading || 'cozy');
+  } catch (e) {}
+})();
+</script>
+
 <div class="book">
 
-  <section class="cover">
+  <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+  <div class="resume-pill" id="resumePill" hidden>
+    <button type="button" class="resume-open" id="resumeBtn"></button>
+    <button type="button" class="resume-dismiss" id="resumeDismiss" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <button type="button" class="reader-toggle" id="readerToggle" aria-expanded="false" aria-controls="readerPanel" aria-label="Reading settings">Aa</button>
+  <div class="reader-panel" id="readerPanel" hidden>
+    <div class="reader-group">
+      <span class="reader-label">Theme</span>
+      <div class="reader-row" role="group" aria-label="Theme">
+        <button type="button" data-set="theme" data-value="paper">Paper</button>
+        <button type="button" data-set="theme" data-value="sepia">Sepia</button>
+        <button type="button" data-set="theme" data-value="night">Night</button>
+      </div>
+    </div>
+    <div class="reader-group">
+      <span class="reader-label">Text size</span>
+      <div class="reader-row">
+        <button type="button" id="sizeDown" aria-label="Decrease text size">A&minus;</button>
+        <span class="size-label" id="sizeLabel">M</span>
+        <button type="button" id="sizeUp" aria-label="Increase text size">A+</button>
+      </div>
+    </div>
+    <div class="reader-group">
+      <span class="reader-label">Font</span>
+      <div class="reader-row" role="group" aria-label="Font">
+        <button type="button" data-set="font" data-value="serif">Serif</button>
+        <button type="button" data-set="font" data-value="sans">Sans</button>
+      </div>
+    </div>
+    <div class="reader-group">
+      <span class="reader-label">Line spacing</span>
+      <div class="reader-row" role="group" aria-label="Line spacing">
+        <button type="button" data-set="leading" data-value="compact">Compact</button>
+        <button type="button" data-set="leading" data-value="cozy">Cozy</button>
+        <button type="button" data-set="leading" data-value="relaxed">Relaxed</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="cover" id="cover">
     <div class="cover-art">
       <img
         src="assets/cover-front.jpg"
@@ -500,3 +747,186 @@
   </div>
 
 </div>
+
+<script>
+(function () {
+  var SETTINGS_KEY = 'ashbound-heir:settings';
+  var PROGRESS_KEY = 'ashbound-heir:progress';
+  var root = document.documentElement;
+
+  function readSettings() {
+    try {
+      return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+  function writeSettings(s) {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    } catch (e) {}
+  }
+
+  var settings = Object.assign(
+    { theme: 'sepia', font: 'serif', size: 'm', leading: 'cozy' },
+    readSettings()
+  );
+
+  var SIZES = ['s', 'm', 'l', 'xl'];
+  var SIZE_LABELS = { s: 'S', m: 'M', l: 'L', xl: 'XL' };
+
+  function syncControls() {
+    var buttons = document.querySelectorAll('[data-set]');
+    for (var i = 0; i < buttons.length; i++) {
+      var btn = buttons[i];
+      var group = btn.getAttribute('data-set');
+      var value = btn.getAttribute('data-value');
+      btn.setAttribute('aria-pressed', String(settings[group] === value));
+    }
+    var sizeLabel = document.getElementById('sizeLabel');
+    if (sizeLabel) sizeLabel.textContent = SIZE_LABELS[settings.size];
+  }
+
+  function applySettings() {
+    root.setAttribute('data-reading-theme', settings.theme);
+    root.setAttribute('data-reader-font', settings.font);
+    root.setAttribute('data-reader-size', settings.size);
+    root.setAttribute('data-reader-leading', settings.leading);
+    writeSettings(settings);
+    syncControls();
+  }
+
+  var setButtons = document.querySelectorAll('[data-set]');
+  for (var i = 0; i < setButtons.length; i++) {
+    setButtons[i].addEventListener('click', function () {
+      settings[this.getAttribute('data-set')] = this.getAttribute('data-value');
+      applySettings();
+    });
+  }
+
+  var sizeUp = document.getElementById('sizeUp');
+  var sizeDown = document.getElementById('sizeDown');
+  if (sizeUp) {
+    sizeUp.addEventListener('click', function () {
+      var idx = SIZES.indexOf(settings.size);
+      settings.size = SIZES[Math.min(idx + 1, SIZES.length - 1)];
+      applySettings();
+    });
+  }
+  if (sizeDown) {
+    sizeDown.addEventListener('click', function () {
+      var idx = SIZES.indexOf(settings.size);
+      settings.size = SIZES[Math.max(idx - 1, 0)];
+      applySettings();
+    });
+  }
+
+  syncControls();
+
+  // Settings panel open/close
+  var toggle = document.getElementById('readerToggle');
+  var panel = document.getElementById('readerPanel');
+  function closePanel() {
+    panel.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+  }
+  function openPanel() {
+    panel.hidden = false;
+    toggle.setAttribute('aria-expanded', 'true');
+  }
+  if (toggle && panel) {
+    toggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (panel.hidden) openPanel();
+      else closePanel();
+    });
+    document.addEventListener('click', function (e) {
+      if (!panel.hidden && !panel.contains(e.target) && e.target !== toggle) closePanel();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) closePanel();
+    });
+  }
+
+  // Progress bar
+  var progressBar = document.getElementById('progressBar');
+  var ticking = false;
+  function updateProgress() {
+    var scrollTop = window.scrollY;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = max > 0 ? Math.min(100, Math.max(0, (scrollTop / max) * 100)) : 0;
+    if (progressBar) progressBar.style.width = pct + '%';
+    ticking = false;
+  }
+  window.addEventListener(
+    'scroll',
+    function () {
+      if (!ticking) {
+        requestAnimationFrame(updateProgress);
+        ticking = true;
+      }
+    },
+    { passive: true }
+  );
+  updateProgress();
+
+  // Reading position tracking (scrollspy via a thin band near the top of the viewport)
+  var sections = document.querySelectorAll('#cover, #toc, .chapter');
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(
+      function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          var entry = entries[i];
+          if (entry.isIntersecting) {
+            try {
+              localStorage.setItem(
+                PROGRESS_KEY,
+                JSON.stringify({ id: entry.target.id, ts: Date.now() })
+              );
+            } catch (e) {}
+          }
+        }
+      },
+      { rootMargin: '-40% 0px -55% 0px', threshold: 0 }
+    );
+    for (var i = 0; i < sections.length; i++) observer.observe(sections[i]);
+  }
+
+  // Resume pill (manual — never auto-scrolls)
+  var CHAPTER_LABELS = {
+    'chapter-1': 'Chapter I',
+    'chapter-2': 'Chapter II',
+    'chapter-3': 'Chapter III',
+    toc: 'Contents',
+  };
+
+  function initResumePill() {
+    if (location.hash) return;
+    var saved;
+    try {
+      saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+    } catch (e) {
+      saved = null;
+    }
+    if (!saved || !saved.id || saved.id === 'cover') return;
+
+    var target = document.getElementById(saved.id);
+    var pill = document.getElementById('resumePill');
+    var btn = document.getElementById('resumeBtn');
+    var dismiss = document.getElementById('resumeDismiss');
+    if (!target || !pill || !btn || !dismiss) return;
+
+    btn.textContent = 'Continue Reading — ' + (CHAPTER_LABELS[saved.id] || saved.id);
+    pill.hidden = false;
+
+    btn.addEventListener('click', function () {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      pill.hidden = true;
+    });
+    dismiss.addEventListener('click', function () {
+      pill.hidden = true;
+    });
+  }
+  initResumePill();
+})();
+</script>
