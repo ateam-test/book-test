@@ -137,6 +137,25 @@
     overflow-x: hidden;
   }
 
+  /* ---------- Pagination: one full-viewport "screen" visible at a time ---------- */
+  /* Gated behind [data-pagination="on"], set by the early script before paint. If JS
+     never runs, none of this applies and the site falls back to continuous scroll. */
+  [data-pagination="on"] .book > section {
+    display: none;
+  }
+  [data-pagination="on"] .book > section[data-active] {
+    display: block;
+  }
+  [data-pagination="on"] .book > section.cover[data-active] {
+    display: flex;
+  }
+  [data-pagination="on"] .contents,
+  [data-pagination="on"] .colophon {
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+  }
+
   /* ---------- Cover ---------- */
   .cover {
     min-height: 92vh;
@@ -220,6 +239,10 @@
     text-transform: uppercase;
     color: var(--ink-soft);
     opacity: 0.7;
+    background: none;
+    border: none;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
   }
 
   /* ---------- Contents ---------- */
@@ -282,6 +305,55 @@
     border-top: 1px solid var(--rule);
     scroll-margin-top: 1.5rem;
   }
+
+  /* Paginated mode: the chapter itself becomes a full-viewport multi-column
+     pager (each column = one "page"); the 640px reading measure moves onto
+     its direct children, since the container must span the full 100vw. */
+  [data-pagination="on"] .chapter {
+    max-width: none;
+    margin: 0;
+    padding: 3rem 0 2.5rem;
+    border-top: none;
+    height: 100vh;
+    height: 100dvh;
+    column-width: 100vw;
+    column-gap: 0;
+    column-fill: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity; /* soft hint only — JS owns the authoritative snap */
+    scrollbar-width: none;
+  }
+  [data-pagination="on"] .chapter::-webkit-scrollbar {
+    display: none;
+  }
+  [data-pagination="on"] .chapter > * {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    box-sizing: border-box;
+  }
+  [data-pagination="on"] .chapter p {
+    orphans: 2;
+    widows: 2;
+  }
+  [data-pagination="on"] .chapter-nav,
+  [data-pagination="on"] .divider,
+  [data-pagination="on"] .placeholder-note {
+    break-inside: avoid-column;
+  }
+  [data-pagination="on"] .chapter h2,
+  [data-pagination="on"] .divider {
+    break-after: avoid-column;
+  }
+  /* Escape hatch: flip to `float: none` if real-browser QA finds the floated
+     drop cap misbehaving across a column break (Chromium testing was clean). */
+  [data-pagination="on"] .chapter p.lede::first-letter {
+    float: left;
+  }
+
   .back-link {
     display: inline-block;
     font-family: var(--font-utility);
@@ -453,6 +525,47 @@
     padding: 0 0.15rem;
   }
 
+  /* ---------- Page-turn controls (paginated chapters only) ---------- */
+  .page-chevron {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+    background: var(--parchment-raised);
+    color: var(--forest);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 6px 16px -6px var(--shadow);
+    z-index: 70;
+  }
+  .page-chevron[hidden] { display: none; }
+  .page-chevron.prev { left: 0.6rem; }
+  .page-chevron.next { right: 0.6rem; }
+
+  .page-counter {
+    position: fixed;
+    bottom: 1.1rem;
+    left: 1.1rem;
+    font-family: var(--font-utility);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+    background: var(--parchment-raised);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    z-index: 70;
+  }
+  .page-counter[hidden] { display: none; }
+
   /* ---------- Reader settings control ---------- */
   .reader-toggle {
     position: fixed;
@@ -559,6 +672,7 @@
     root.setAttribute('data-reader-font', s.font || 'serif');
     root.setAttribute('data-reader-size', s.size || 'm');
     root.setAttribute('data-reader-leading', s.leading || 'cozy');
+    root.setAttribute('data-pagination', 'on');
   } catch (e) {}
 })();
 </script>
@@ -571,6 +685,10 @@
     <button type="button" class="resume-open" id="resumeBtn"></button>
     <button type="button" class="resume-dismiss" id="resumeDismiss" aria-label="Dismiss">&times;</button>
   </div>
+
+  <button type="button" class="page-chevron prev" id="pagePrev" aria-label="Previous page" hidden>&#8249;</button>
+  <button type="button" class="page-chevron next" id="pageNext" aria-label="Next page" hidden>&#8250;</button>
+  <div class="page-counter" id="pageCounter" hidden></div>
 
   <button type="button" class="reader-toggle" id="readerToggle" aria-expanded="false" aria-controls="readerPanel" aria-label="Reading settings">Aa</button>
   <div class="reader-panel" id="readerPanel" hidden>
@@ -621,7 +739,7 @@
       The gate remembers every hand that opens it. It has just remembered his.
     </p>
     <p class="byline">Draft manuscript &middot; <em>working title</em></p>
-    <p class="scroll-cue">&darr; contents</p>
+    <button type="button" class="scroll-cue" id="scrollCue">&darr; contents</button>
   </section>
 
   <section class="contents" id="toc">
@@ -905,7 +1023,7 @@
   </section>
     <!-- CHAPTERS:END -->
 
-  <div class="colophon">
+  <section class="colophon" id="colophon">
     <svg class="seal" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <circle cx="50" cy="50" r="46" fill="none" stroke="var(--gold)" stroke-width="1.5" />
       <circle cx="50" cy="50" r="36" fill="none" stroke="var(--gold)" stroke-width="1" />
@@ -914,7 +1032,7 @@
       <circle cx="50" cy="50" r="4" fill="var(--forest)" />
     </svg>
     <p>The Ashbound Heir &middot; placeholder scaffold &middot; more chapters to follow</p>
-  </div>
+  </section>
 
 </div>
 
@@ -964,6 +1082,11 @@
     root.setAttribute('data-reader-leading', settings.leading);
     writeSettings(settings);
     syncControls();
+    // Font/size/leading changes reflow a chapter's page count — re-locate
+    // the reader's position rather than trust any previously-computed index.
+    if (typeof resyncActiveChapterPosition === 'function') {
+      requestAnimationFrame(resyncActiveChapterPosition);
+    }
   }
 
   var setButtons = document.querySelectorAll('[data-set]');
@@ -1018,49 +1141,305 @@
     });
   }
 
-  // Progress bar
   var progressBar = document.getElementById('progressBar');
-  var ticking = false;
-  function updateProgress() {
-    var scrollTop = window.scrollY;
-    var max = document.documentElement.scrollHeight - window.innerHeight;
-    var pct = max > 0 ? Math.min(100, Math.max(0, (scrollTop / max) * 100)) : 0;
-    if (progressBar) progressBar.style.width = pct + '%';
-    ticking = false;
-  }
-  window.addEventListener(
-    'scroll',
-    function () {
-      if (!ticking) {
-        requestAnimationFrame(updateProgress);
-        ticking = true;
-      }
-    },
-    { passive: true }
-  );
-  updateProgress();
 
-  // Reading position tracking (scrollspy via a thin band near the top of the viewport)
-  var sections = document.querySelectorAll('#cover, #toc, .chapter');
-  if ('IntersectionObserver' in window) {
-    var observer = new IntersectionObserver(
-      function (entries) {
-        for (var i = 0; i < entries.length; i++) {
-          var entry = entries[i];
-          if (entry.isIntersecting) {
-            try {
-              localStorage.setItem(
-                PROGRESS_KEY,
-                JSON.stringify({ id: entry.target.id, ts: Date.now() })
-              );
-            } catch (e) {}
-          }
-        }
-      },
-      { rootMargin: '-40% 0px -55% 0px', threshold: 0 }
-    );
-    for (var i = 0; i < sections.length; i++) observer.observe(sections[i]);
+  // ---------- Pagination: screens + per-chapter pages ----------
+  // "Screens" = the book's top-level sections in DOM order (cover, toc, each
+  // chapter, colophon) — derived at runtime so adding/removing a chapter via
+  // the Google Doc sync just works without touching this script.
+  var screens = Array.prototype.slice.call(document.querySelectorAll('.book > section'));
+  var activeIndex = 0;
+
+  var pagePrev = document.getElementById('pagePrev');
+  var pageNext = document.getElementById('pageNext');
+  var pageCounter = document.getElementById('pageCounter');
+  var scrollCue = document.getElementById('scrollCue');
+
+  function isChapter(el) {
+    return !!el && el.classList.contains('chapter');
   }
+
+  function pageWidth() {
+    return window.innerWidth || 1;
+  }
+
+  function chapterPageCount(el) {
+    return Math.max(1, Math.round(el.scrollWidth / pageWidth()));
+  }
+
+  function chapterCurrentPage(el) {
+    return Math.max(1, Math.round(el.scrollLeft / pageWidth()) + 1);
+  }
+
+  // Direct children treated as resumable "positions" within a chapter —
+  // deliberately coarse (nearest paragraph, not an exact character offset).
+  function resumableChildren(chapterEl) {
+    return Array.prototype.filter.call(chapterEl.children, function (c) {
+      return (
+        c.tagName === 'H2' ||
+        c.tagName === 'P' ||
+        c.classList.contains('divider') ||
+        c.classList.contains('placeholder-note') ||
+        c.classList.contains('chapter-nav')
+      );
+    });
+  }
+
+  function updateProgress() {
+    if (!progressBar) return;
+    var active = screens[activeIndex];
+    var within = 0;
+    if (isChapter(active)) {
+      var total = chapterPageCount(active);
+      within = total > 1 ? (chapterCurrentPage(active) - 1) / total : 0;
+    }
+    var pct = ((activeIndex + within) / screens.length) * 100;
+    progressBar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+  }
+
+  function updatePageControls() {
+    var active = screens[activeIndex];
+    var chapter = isChapter(active);
+
+    if (pageCounter) {
+      pageCounter.hidden = !chapter;
+      if (chapter) {
+        pageCounter.textContent =
+          'Page ' + chapterCurrentPage(active) + ' of ' + chapterPageCount(active);
+      }
+    }
+
+    var atStart = activeIndex === 0 && (!chapter || chapterCurrentPage(active) === 1);
+    var atEnd =
+      activeIndex === screens.length - 1 &&
+      (!chapter || chapterCurrentPage(active) === chapterPageCount(active));
+
+    if (pagePrev) {
+      pagePrev.hidden = false;
+      pagePrev.disabled = atStart;
+      pagePrev.style.opacity = atStart ? '0.35' : '';
+    }
+    if (pageNext) {
+      pageNext.hidden = false;
+      pageNext.disabled = atEnd;
+      pageNext.style.opacity = atEnd ? '0.35' : '';
+    }
+  }
+
+  function saveProgress() {
+    var active = screens[activeIndex];
+    if (!active || active.id === 'cover') return;
+    var record = { id: active.id, ts: Date.now() };
+    if (isChapter(active)) {
+      var children = resumableChildren(active);
+      var x = active.scrollLeft;
+      var nearestIndex = 0;
+      for (var i = 0; i < children.length; i++) {
+        if (children[i].offsetLeft <= x + 4) nearestIndex = i;
+      }
+      record.childIndex = nearestIndex;
+    }
+    try {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(record));
+    } catch (e) {}
+  }
+
+  function activateScreen(index, opts) {
+    opts = opts || {};
+    index = Math.max(0, Math.min(screens.length - 1, index));
+    var prevActive = screens[activeIndex];
+    if (prevActive) prevActive.removeAttribute('data-active');
+    activeIndex = index;
+    var el = screens[activeIndex];
+    el.setAttribute('data-active', '');
+    if (isChapter(el)) el.scrollLeft = 0;
+    if (opts.updateHash !== false) {
+      try {
+        history.replaceState(null, '', '#' + el.id);
+      } catch (e) {}
+    }
+    updatePageControls();
+    updateProgress();
+    saveProgress();
+  }
+
+  function scrollChapterToChild(chapterEl, childIndex, behavior) {
+    var children = resumableChildren(chapterEl);
+    var target = children[childIndex];
+    if (!target) return;
+    var pw = pageWidth();
+    var page = Math.floor(target.offsetLeft / pw);
+    if (behavior === 'smooth') {
+      chapterEl.scrollTo({ left: page * pw, behavior: 'smooth' });
+    } else {
+      chapterEl.scrollLeft = page * pw;
+      updatePageControls();
+      updateProgress();
+    }
+  }
+
+  var reducedMotion =
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function turnScrollTo(el, left) {
+    if (reducedMotion) {
+      el.scrollLeft = left;
+      updatePageControls();
+      updateProgress();
+    } else {
+      el.scrollTo({ left: left, behavior: 'smooth' });
+    }
+  }
+
+  function goToScreenId(id) {
+    for (var i = 0; i < screens.length; i++) {
+      if (screens[i].id === id) {
+        activateScreen(i);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function nextPage() {
+    var active = screens[activeIndex];
+    if (isChapter(active)) {
+      var pw = pageWidth();
+      var total = chapterPageCount(active);
+      var cur = chapterCurrentPage(active);
+      if (cur < total) {
+        turnScrollTo(active, cur * pw);
+        return;
+      }
+    }
+    if (activeIndex < screens.length - 1) activateScreen(activeIndex + 1);
+  }
+
+  function prevPage() {
+    var active = screens[activeIndex];
+    if (isChapter(active)) {
+      var pw = pageWidth();
+      var cur = chapterCurrentPage(active);
+      if (cur > 1) {
+        turnScrollTo(active, (cur - 2) * pw);
+        return;
+      }
+    }
+    if (activeIndex > 0) {
+      var prevIdx = activeIndex - 1;
+      activateScreen(prevIdx);
+      var prevEl = screens[prevIdx];
+      if (isChapter(prevEl)) {
+        var total = chapterPageCount(prevEl);
+        prevEl.scrollLeft = (total - 1) * pageWidth();
+        updatePageControls();
+        updateProgress();
+      }
+    }
+  }
+
+  if (pageNext) pageNext.addEventListener('click', nextPage);
+  if (pagePrev) pagePrev.addEventListener('click', prevPage);
+  if (scrollCue) {
+    scrollCue.addEventListener('click', function () {
+      goToScreenId('toc');
+    });
+  }
+
+  // Keyboard navigation — ignored while the settings panel is open.
+  document.addEventListener('keydown', function (e) {
+    if (panel && !panel.hidden) return;
+    if (e.key === 'ArrowRight') nextPage();
+    else if (e.key === 'ArrowLeft') prevPage();
+  });
+
+  // Wheel: translate vertical wheel/trackpad delta into horizontal page-scroll
+  // on the active chapter (plain mouse wheels don't scroll horizontal boxes).
+  document.addEventListener(
+    'wheel',
+    function (e) {
+      var active = screens[activeIndex];
+      if (!isChapter(active)) return;
+      var delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!delta) return;
+      e.preventDefault();
+      active.scrollLeft += delta;
+    },
+    { passive: false }
+  );
+
+  // Per-chapter scroll: live-update controls while dragging, then snap to the
+  // nearest page once the scroll settles (scroll-snap is only a soft hint).
+  var chapters = Array.prototype.filter.call(screens, isChapter);
+  var scrollTicking = false;
+  var settleTimer = null;
+  function onChapterScroll(e) {
+    var el = e.currentTarget;
+    if (screens[activeIndex] !== el) return;
+    if (!scrollTicking) {
+      requestAnimationFrame(function () {
+        updatePageControls();
+        updateProgress();
+        scrollTicking = false;
+      });
+      scrollTicking = true;
+    }
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(function () {
+      var pw = pageWidth();
+      var nearest = Math.round(el.scrollLeft / pw) * pw;
+      if (Math.abs(el.scrollLeft - nearest) > 2) {
+        if (reducedMotion) el.scrollLeft = nearest;
+        else el.scrollTo({ left: nearest, behavior: 'smooth' });
+      }
+      saveProgress();
+    }, 120);
+  }
+  for (var ci = 0; ci < chapters.length; ci++) {
+    chapters[ci].addEventListener('scroll', onChapterScroll, { passive: true });
+  }
+
+  // Resize / settings-change resync: font-size and viewport changes reflow a
+  // chapter's page count, so re-locate the saved position rather than trust
+  // any previously-computed page index.
+  function resyncActiveChapterPosition() {
+    var active = screens[activeIndex];
+    if (!isChapter(active)) {
+      updatePageControls();
+      updateProgress();
+      return;
+    }
+    var saved;
+    try {
+      saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+    } catch (e) {
+      saved = null;
+    }
+    if (saved && saved.id === active.id && saved.childIndex != null) {
+      scrollChapterToChild(active, saved.childIndex, 'auto');
+    } else {
+      var pw = pageWidth();
+      var maxLeft = Math.max(0, active.scrollWidth - pw);
+      active.scrollLeft = Math.min(active.scrollLeft, maxLeft);
+    }
+    updatePageControls();
+    updateProgress();
+  }
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resyncActiveChapterPosition, 150);
+  });
+
+  // TOC / chapter-nav / back-link anchors are intercepted (not left as native
+  // anchors) since inactive screens are display:none and can't be scrolled to.
+  document.querySelector('.book').addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if (!a) return;
+    var id = a.getAttribute('href').slice(1);
+    if (!goToScreenId(id)) return;
+    e.preventDefault();
+  });
 
   // Resume pill (manual — never auto-scrolls)
   var CHAPTER_LABELS = /* CHAPTER_LABELS:START */
@@ -1084,23 +1463,48 @@
     }
     if (!saved || !saved.id || saved.id === 'cover') return;
 
-    var target = document.getElementById(saved.id);
+    var targetIndex = -1;
+    for (var i = 0; i < screens.length; i++) {
+      if (screens[i].id === saved.id) {
+        targetIndex = i;
+        break;
+      }
+    }
+    if (targetIndex === -1 || targetIndex === activeIndex) return;
+
     var pill = document.getElementById('resumePill');
     var btn = document.getElementById('resumeBtn');
     var dismiss = document.getElementById('resumeDismiss');
-    if (!target || !pill || !btn || !dismiss) return;
+    if (!pill || !btn || !dismiss) return;
 
     btn.textContent = 'Continue Reading — ' + (CHAPTER_LABELS[saved.id] || saved.id);
     pill.hidden = false;
 
     btn.addEventListener('click', function () {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      activateScreen(targetIndex);
+      var el = screens[targetIndex];
+      if (isChapter(el) && saved.childIndex != null) {
+        scrollChapterToChild(el, saved.childIndex, 'smooth');
+      }
       pill.hidden = true;
     });
     dismiss.addEventListener('click', function () {
       pill.hidden = true;
     });
   }
+
+  // ---------- Initial activation ----------
+  var startIndex = 0;
+  if (location.hash) {
+    var hashId = location.hash.slice(1);
+    for (var si = 0; si < screens.length; si++) {
+      if (screens[si].id === hashId) {
+        startIndex = si;
+        break;
+      }
+    }
+  }
+  activateScreen(startIndex, { updateHash: false });
   initResumePill();
 })();
 </script>
