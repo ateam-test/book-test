@@ -141,10 +141,9 @@ def part_label_for(num, title):
 
 
 def chapter_opener_html(num, raw_title):
-    """If book/assets/Chapter-<num>.png exists, it's a full title-card
-    illustration (the chapter title is baked into the artwork), shown in
-    place of the plain text heading. Falls back to the ordinary <h2> +
-    divider when no matching image has been dropped into assets/."""
+    """If book/assets/Chapter-<num>.png exists, it's a title-card
+    illustration shown below the chapter heading. Falls back to nothing
+    when no matching image has been dropped into assets/."""
     image_name = "Chapter-%d.png" % num
     if not os.path.isfile(os.path.join(ASSETS_DIR, image_name)):
         return ""
@@ -260,19 +259,15 @@ def build_regions(chapters):
         )
 
         opener_html = chapter_opener_html(num, ch["title"])
-        heading_html = (
-            '    <h2 class="sr-only">{title}</h2>'.format(title=chapter_label)
-            if opener_html
-            else '    <h2>{title}</h2>\n    <div class="divider"></div>'.format(
-                title=chapter_label
-            )
-        )
+        heading_html = "    <h2>{title}</h2>".format(title=chapter_label)
+        if not opener_html:
+            heading_html += '\n    <div class="divider"></div>'
 
         chapter_blocks.append(
             '  <section class="chapter" id="{slug}">\n'
             '    <a class="back-link" href="#toc">&larr; Contents</a>\n'
-            "{opener}"
             "{heading}\n"
+            "{opener}"
             "{body}\n"
             '    <div class="chapter-nav">\n'
             "      {prev}\n"
@@ -281,8 +276,8 @@ def build_regions(chapters):
             "    </div>\n"
             "  </section>".format(
                 slug=slug,
-                opener=(opener_html + "\n" if opener_html else ""),
                 heading=heading_html,
+                opener=(opener_html + "\n" if opener_html else ""),
                 body=body_html,
                 prev=prev_link,
                 next=next_link,

@@ -445,10 +445,7 @@
   }
 
   /* ---------- Chapter-opener illustration ----------
-     Full chapter-title artwork (title baked into the image itself), shown
-     in place of the plain text heading. The h2 stays in the DOM as sr-only
-     so the chapter title is still announced to screen readers and still
-     resolvable by anchor links / the resume pill. */
+     Title-card artwork shown below the visible chapter heading. */
   .chapter-opener {
     display: flex;
     justify-content: center;
@@ -479,17 +476,6 @@
        part-title's forced break lands one column later than expected,
        leaving a blank page between the opener and the chapter text. */
     max-height: 62dvh;
-  }
-  /* The sr-only heading after a chapter-opener is still positioned via its
-     "static position" for column-fragmentation purposes even though it's
-     out of flow. Left with no explicit offset, that confuses the multicol
-     engine into reserving a whole blank column between the opener and the
-     part-title's forced break. Pinning top/left removes the ambiguity;
-     break-after: auto drops the inherited avoid-column that compounded it. */
-  .chapter h2.sr-only {
-    top: 0;
-    left: 0;
-    break-after: auto;
   }
   .chapter p {
     font-size: calc(1.08rem * var(--reader-scale));
@@ -897,10 +883,10 @@
   <!-- CHAPTERS:START -->
   <section class="chapter" id="chapter-1">
     <a class="back-link" href="#toc">&larr; Contents</a>
+    <h2>Chapter 1</h2>
     <div class="chapter-opener">
       <img src="assets/Chapter-1.png" alt="Chapter 1: The Arrow" width="1024" height="1536" loading="lazy" />
     </div>
-    <h2 class="sr-only">Chapter 1</h2>
     <h3 class="part-title" id="chapter-1-part-1">Part 1 &middot; The Arrow</h3>
     <p class="lede">
       It was the most beautiful day EVER. All my life I had always been kept away in a cave, sleeping on the hard rock with only my arms for a pillow. For the first time in months, I stepped out into the warming sunlight. The little birds chattered in their happy songs, smiling at the batty moths that flew past them.
@@ -1083,10 +1069,10 @@
 
   <section class="chapter" id="chapter-2">
     <a class="back-link" href="#toc">&larr; Contents</a>
+    <h2>Chapter 2</h2>
     <div class="chapter-opener">
       <img src="assets/Chapter-2.png" alt="Chapter 2: A surreal Reality" width="1024" height="1536" loading="lazy" />
     </div>
-    <h2 class="sr-only">Chapter 2</h2>
     <h3 class="part-title" id="chapter-2-part-1">Part 1 &middot; A surreal Reality</h3>
     <p class="lede">
       There is no need to describe the intense moment of panic I felt as the blood ran cold in my veins. Without my Charm or a willing Source, I had nothing to reach for and felt powerless to quell my fears and confront whatever monster was before me.
@@ -1513,29 +1499,50 @@
     function (e) {
       if (settings.mode !== 'pages') return;
       var active = screens[activeIndex];
-      if (!isChapter(active)) return;
-      var delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      if (!delta) return;
-      e.preventDefault();
-      var maxScroll = active.scrollWidth - active.clientWidth;
-      if (delta > 0 && active.scrollLeft >= maxScroll - 3) {
-        if (activeIndex < screens.length - 1) activateScreen(activeIndex + 1);
-        return;
-      }
-      if (delta < 0 && active.scrollLeft <= 1) {
-        if (activeIndex > 0) {
-          var prevIdx = activeIndex - 1;
-          activateScreen(prevIdx);
-          var prevEl = screens[prevIdx];
-          if (isChapter(prevEl)) {
-            prevEl.scrollLeft = (chapterPageCount(prevEl) - 1) * pageWidth();
-            updatePageControls();
-            updateProgress();
-          }
+      if (isChapter(active)) {
+        var delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (!delta) return;
+        e.preventDefault();
+        var maxScroll = active.scrollWidth - active.clientWidth;
+        if (delta > 0 && active.scrollLeft >= maxScroll - 3) {
+          if (activeIndex < screens.length - 1) activateScreen(activeIndex + 1);
+          return;
         }
+        if (delta < 0 && active.scrollLeft <= 1) {
+          if (activeIndex > 0) {
+            var prevIdx = activeIndex - 1;
+            activateScreen(prevIdx);
+            var prevEl = screens[prevIdx];
+            if (isChapter(prevEl)) {
+              prevEl.scrollLeft = (chapterPageCount(prevEl) - 1) * pageWidth();
+              updatePageControls();
+              updateProgress();
+            }
+          }
+          return;
+        }
+        active.scrollLeft += delta;
         return;
       }
-      active.scrollLeft += delta;
+      // Non-chapter screens (cover/toc/colophon) have no horizontal scroll
+      // container of their own. Only react to a genuinely horizontal gesture
+      // (trackpad two-finger swipe, shift+wheel) as a page turn, and leave
+      // plain vertical wheel alone so a long contents/colophon list can
+      // still scroll natively.
+      if (!e.deltaX || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      if (e.deltaX > 0) {
+        if (activeIndex < screens.length - 1) activateScreen(activeIndex + 1);
+      } else if (activeIndex > 0) {
+        var prevIdx2 = activeIndex - 1;
+        activateScreen(prevIdx2);
+        var prevEl2 = screens[prevIdx2];
+        if (isChapter(prevEl2)) {
+          prevEl2.scrollLeft = (chapterPageCount(prevEl2) - 1) * pageWidth();
+          updatePageControls();
+          updateProgress();
+        }
+      }
     },
     { passive: false }
   );
@@ -1637,6 +1644,51 @@
     chapters[ci].addEventListener('touchstart', onChapterTouchStart, { passive: true });
     chapters[ci].addEventListener('touchend', onChapterTouchEnd, { passive: true });
   }
+
+  // Swipe to turn the page on non-chapter screens (cover/toc/colophon):
+  // these have no horizontal scroll container for onChapterTouchEnd to
+  // carry through from, so a plain horizontal drag anywhere on the screen
+  // is treated as a page turn directly. A near-vertical drag is left alone
+  // so scrolling a long contents/colophon list still works.
+  var screenTouchStartX = null,
+    screenTouchStartY = null;
+  document.querySelector('.book').addEventListener(
+    'touchstart',
+    function (e) {
+      if (settings.mode !== 'pages' || !e.touches || !e.touches.length) return;
+      screenTouchStartX = e.touches[0].clientX;
+      screenTouchStartY = e.touches[0].clientY;
+    },
+    { passive: true }
+  );
+  document.querySelector('.book').addEventListener(
+    'touchend',
+    function (e) {
+      if (screenTouchStartX == null || settings.mode !== 'pages') return;
+      var startX = screenTouchStartX,
+        startY = screenTouchStartY;
+      screenTouchStartX = null;
+      if (isChapter(screens[activeIndex])) return;
+      var endX = e.changedTouches && e.changedTouches.length ? e.changedTouches[0].clientX : startX;
+      var endY = e.changedTouches && e.changedTouches.length ? e.changedTouches[0].clientY : startY;
+      var dx = endX - startX;
+      var dy = endY - startY;
+      if (Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy)) return;
+      if (dx < 0) {
+        if (activeIndex < screens.length - 1) activateScreen(activeIndex + 1);
+      } else if (activeIndex > 0) {
+        var prevIdx3 = activeIndex - 1;
+        activateScreen(prevIdx3);
+        var prevEl3 = screens[prevIdx3];
+        if (isChapter(prevEl3)) {
+          prevEl3.scrollLeft = (chapterPageCount(prevEl3) - 1) * pageWidth();
+          updatePageControls();
+          updateProgress();
+        }
+      }
+    },
+    { passive: true }
+  );
 
   // Resize / settings-change resync: font-size and viewport changes reflow a
   // chapter's page count, so re-locate the saved position rather than trust
