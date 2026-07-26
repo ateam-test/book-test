@@ -725,6 +725,13 @@
   <button type="button" class="reader-toggle" id="readerToggle" aria-expanded="false" aria-controls="readerPanel" aria-label="Reading settings">Aa</button>
   <div class="reader-panel" id="readerPanel" hidden>
     <div class="reader-group">
+      <span class="reader-label">Reading Mode</span>
+      <div class="reader-row" role="group" aria-label="Reading mode">
+        <button type="button" data-set="mode" data-value="scroll">Scroll</button>
+        <button type="button" data-set="mode" data-value="pages">Pages</button>
+      </div>
+    </div>
+    <div class="reader-group">
       <span class="reader-label">Theme</span>
       <div class="reader-row" role="group" aria-label="Theme">
         <button type="button" data-set="theme" data-value="paper">Paper</button>

@@ -117,6 +117,28 @@ def render_paragraph_block(text, is_lede):
     return '    <p{cls}>\n      {text}\n    </p>'.format(cls=cls, text=text)
 
 
+CHAPTER_PREFIX_RE = re.compile(r"^\s*chapter\s+\d+\s*[:.\-–—]?\s*", re.IGNORECASE)
+PART_PREFIX_RE = re.compile(r"^\s*part\s+\d+\s*[:.\-–—]?\s*", re.IGNORECASE)
+
+
+def chapter_label_for(num, title):
+    """Chapters with parts are labelled "Chapter N" — writers often already type
+    that into the heading (e.g. "Chapter 2: The Reckoning"), so strip a
+    redundant leading "Chapter N" before appending any real subtitle, rather
+    than doubling up on numbering."""
+    remainder = CHAPTER_PREFIX_RE.sub("", title, count=1).strip()
+    if remainder:
+        return "Chapter %d &middot; %s" % (num, html.escape(remainder))
+    return "Chapter %d" % num
+
+
+def part_label_for(num, title):
+    remainder = PART_PREFIX_RE.sub("", title, count=1).strip()
+    if remainder:
+        return "Part %d &middot; %s" % (num, html.escape(remainder))
+    return "Part %d" % num
+
+
 def build_regions(chapters):
     toc_blocks = []
     chapter_blocks = []
@@ -128,7 +150,7 @@ def build_regions(chapters):
         slug = "chapter-%d" % num
         has_parts = bool(ch["parts"])
         chapter_label = (
-            html.escape(ch["title"])
+            chapter_label_for(num, ch["title"])
             if has_parts
             else "%s &middot; %s" % (roman, html.escape(ch["title"]))
         )
@@ -144,7 +166,7 @@ def build_regions(chapters):
             for j, part in enumerate(ch["parts"]):
                 part_num = j + 1
                 part_slug = "%s-part-%d" % (slug, part_num)
-                part_title = "Part %d &middot; %s" % (part_num, html.escape(part["title"]))
+                part_title = part_label_for(part_num, part["title"])
                 part_teaser_line = (
                     '        <span class="toc-teaser">%s</span>\n' % html.escape(part["teaser"])
                     if part["teaser"]
@@ -190,7 +212,7 @@ def build_regions(chapters):
             for j, part in enumerate(ch["parts"]):
                 part_num = j + 1
                 part_slug = "%s-part-%d" % (slug, part_num)
-                part_title = "Part %d &middot; %s" % (part_num, html.escape(part["title"]))
+                part_title = part_label_for(part_num, part["title"])
                 body_parts.append(
                     '    <h3 class="part-title" id="{id}">{title}</h3>'.format(
                         id=part_slug, title=part_title
