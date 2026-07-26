@@ -130,6 +130,15 @@
     font-family: var(--font-body);
     margin: 0;
     -webkit-font-smoothing: antialiased;
+    /* Only needed in scroll mode (continuous flow can run under the fixed
+       footer). In pages mode each screen is already an exact 100dvh with its
+       own footer clearance — adding this here too would make body taller
+       than the viewport, forcing a needless vertical scrollbar whose width
+       then throws off every chapter's 100vw column math by a few pixels. */
+    padding-bottom: var(--footer-h);
+  }
+  [data-reader-mode="pages"] body {
+    padding-bottom: 0;
   }
 
   .book {
@@ -154,6 +163,7 @@
     height: 100vh;
     height: 100dvh;
     overflow-y: auto;
+    padding-bottom: calc(var(--footer-h) + 1.5rem);
   }
 
   /* ---------- Cover ---------- */
@@ -227,6 +237,12 @@
   .byline em {
     font-style: normal;
     color: var(--gold);
+  }
+  [data-reader-mode="pages"] .cover {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    padding-bottom: calc(var(--footer-h) + 1.5rem);
   }
   .scroll-cue {
     position: absolute;
@@ -338,7 +354,7 @@
   [data-reader-mode="pages"] .chapter {
     max-width: none;
     margin: 0;
-    padding: 3rem 0 2.5rem;
+    padding: 3rem 0 calc(var(--footer-h) + 1rem);
     border-top: none;
     height: 100vh;
     height: 100dvh;
@@ -561,70 +577,83 @@
     padding: 0 0.15rem;
   }
 
-  /* ---------- Page-turn controls (paginated chapters only) ---------- */
-  .page-chevron {
+  /* ---------- Persistent footer: prev page | settings | next page ----------
+     One full-width bar instead of separately-floating controls, so nothing
+     sits on top of the reading column. In scroll mode the page-turn buttons
+     and counter hide themselves (no "pages" to turn); the settings button
+     stays put either way. */
+  :root {
+    --footer-h: 3.6rem;
+  }
+  .page-footer {
     position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--footer-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.75rem;
+    background: var(--parchment-raised);
+    border-top: 1px solid var(--rule);
+    z-index: 80;
+  }
+  .footer-turn {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     border: 1px solid var(--rule);
-    background: var(--parchment-raised);
+    background: transparent;
     color: var(--forest);
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     line-height: 1;
     cursor: pointer;
-    box-shadow: 0 6px 16px -6px var(--shadow);
-    z-index: 70;
   }
-  .page-chevron[hidden] { display: none; }
-  .page-chevron.prev { left: 0.6rem; }
-  .page-chevron.next { right: 0.6rem; }
-
+  .footer-turn:disabled { opacity: 0.35; cursor: default; }
+  .footer-turn[hidden] { visibility: hidden; }
+  [data-reader-mode="scroll"] .footer-turn,
+  [data-reader-mode="scroll"] .page-counter {
+    visibility: hidden;
+  }
+  .footer-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+  }
   .page-counter {
-    position: fixed;
-    bottom: 1.1rem;
-    left: 1.1rem;
     font-family: var(--font-utility);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
     font-variant-numeric: tabular-nums;
     color: var(--ink-soft);
-    background: var(--parchment-raised);
-    border: 1px solid var(--rule);
-    border-radius: 999px;
-    padding: 0.35rem 0.7rem;
-    z-index: 70;
   }
   .page-counter[hidden] { display: none; }
 
   /* ---------- Reader settings control ---------- */
   .reader-toggle {
-    position: fixed;
-    right: 1.1rem;
-    bottom: 1.1rem;
-    width: 46px;
-    height: 46px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: 1px solid var(--rule);
-    background: var(--parchment-raised);
+    background: var(--parchment);
     color: var(--forest);
     font-family: var(--font-display);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 8px 20px -8px var(--shadow);
-    z-index: 80;
   }
   .reader-panel {
     position: fixed;
-    right: 1.1rem;
-    bottom: 4.5rem;
-    width: min(280px, calc(100vw - 2.2rem));
+    left: 50%;
+    bottom: calc(var(--footer-h) + 0.75rem);
+    transform: translateX(-50%);
+    width: min(300px, calc(100vw - 1.5rem));
     background: var(--parchment-raised);
     border: 1px solid var(--rule);
     border-radius: 10px;
@@ -636,10 +665,10 @@
   .reader-panel[hidden] { display: none; }
   @media (max-width: 480px) {
     .reader-panel {
-      right: 0.75rem;
       left: 0.75rem;
+      right: 0.75rem;
+      transform: none;
       width: auto;
-      bottom: 4.25rem;
     }
   }
   .reader-group { margin-bottom: 0.9rem; }
@@ -718,11 +747,15 @@
     <button type="button" class="resume-dismiss" id="resumeDismiss" aria-label="Dismiss">&times;</button>
   </div>
 
-  <button type="button" class="page-chevron prev" id="pagePrev" aria-label="Previous page" hidden>&#8249;</button>
-  <button type="button" class="page-chevron next" id="pageNext" aria-label="Next page" hidden>&#8250;</button>
-  <div class="page-counter" id="pageCounter" hidden></div>
+  <div class="page-footer">
+    <button type="button" class="footer-turn" id="pagePrev" aria-label="Previous page">&#8249;</button>
+    <div class="footer-center">
+      <div class="page-counter" id="pageCounter" hidden></div>
+      <button type="button" class="reader-toggle" id="readerToggle" aria-expanded="false" aria-controls="readerPanel" aria-label="Reading settings">Aa</button>
+    </div>
+    <button type="button" class="footer-turn" id="pageNext" aria-label="Next page">&#8250;</button>
+  </div>
 
-  <button type="button" class="reader-toggle" id="readerToggle" aria-expanded="false" aria-controls="readerPanel" aria-label="Reading settings">Aa</button>
   <div class="reader-panel" id="readerPanel" hidden>
     <div class="reader-group">
       <span class="reader-label">Reading Mode</span>
@@ -1083,9 +1116,10 @@
   }
 
   var settings = Object.assign(
-    { theme: 'sepia', font: 'serif', size: 'm', leading: 'cozy' },
+    { theme: 'sepia', font: 'serif', size: 'm', leading: 'cozy', mode: 'pages' },
     readSettings()
   );
+  var currentSectionId = 'cover';
 
   var SIZES = ['s', 'm', 'l', 'xl'];
   var SIZE_LABELS = { s: 'S', m: 'M', l: 'L', xl: 'XL' };
@@ -1103,15 +1137,21 @@
   }
 
   function applySettings() {
+    var modeChanged = root.getAttribute('data-reader-mode') !== settings.mode;
     root.setAttribute('data-reading-theme', settings.theme);
     root.setAttribute('data-reader-font', settings.font);
     root.setAttribute('data-reader-size', settings.size);
     root.setAttribute('data-reader-leading', settings.leading);
+    root.setAttribute('data-reader-mode', settings.mode);
     writeSettings(settings);
     syncControls();
+    if (modeChanged && typeof onModeChange === 'function') {
+      requestAnimationFrame(onModeChange);
+      return;
+    }
     // Font/size/leading changes reflow a chapter's page count — re-locate
     // the reader's position rather than trust any previously-computed index.
-    if (typeof resyncActiveChapterPosition === 'function') {
+    if (settings.mode === 'pages' && typeof resyncActiveChapterPosition === 'function') {
       requestAnimationFrame(resyncActiveChapterPosition);
     }
   }
@@ -1195,7 +1235,8 @@
   }
 
   function chapterCurrentPage(el) {
-    return Math.max(1, Math.round(el.scrollLeft / pageWidth()) + 1);
+    var page = Math.max(1, Math.round(el.scrollLeft / pageWidth()) + 1);
+    return Math.min(page, chapterPageCount(el));
   }
 
   // Direct children treated as resumable "positions" within a chapter —
@@ -1214,7 +1255,7 @@
   }
 
   function updateProgress() {
-    if (!progressBar) return;
+    if (!progressBar || settings.mode !== 'pages') return;
     var active = screens[activeIndex];
     var within = 0;
     if (isChapter(active)) {
@@ -1226,6 +1267,12 @@
   }
 
   function updatePageControls() {
+    if (settings.mode !== 'pages') {
+      if (pageCounter) pageCounter.hidden = true;
+      if (pagePrev) pagePrev.hidden = true;
+      if (pageNext) pageNext.hidden = true;
+      return;
+    }
     var active = screens[activeIndex];
     var chapter = isChapter(active);
 
@@ -1280,6 +1327,7 @@
     activeIndex = index;
     var el = screens[activeIndex];
     el.setAttribute('data-active', '');
+    currentSectionId = el.id;
     if (isChapter(el)) el.scrollLeft = 0;
     if (opts.updateHash !== false) {
       try {
@@ -1353,6 +1401,7 @@
   }
 
   function nextPage() {
+    if (settings.mode !== 'pages') return;
     var active = screens[activeIndex];
     if (isChapter(active)) {
       var pw = pageWidth();
@@ -1367,6 +1416,7 @@
   }
 
   function prevPage() {
+    if (settings.mode !== 'pages') return;
     var active = screens[activeIndex];
     if (isChapter(active)) {
       var pw = pageWidth();
@@ -1409,15 +1459,98 @@
   document.addEventListener(
     'wheel',
     function (e) {
+      if (settings.mode !== 'pages') return;
       var active = screens[activeIndex];
       if (!isChapter(active)) return;
       var delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       if (!delta) return;
       e.preventDefault();
+      var maxScroll = active.scrollWidth - active.clientWidth;
+      if (delta > 0 && active.scrollLeft >= maxScroll - 3) {
+        if (activeIndex < screens.length - 1) activateScreen(activeIndex + 1);
+        return;
+      }
+      if (delta < 0 && active.scrollLeft <= 1) {
+        if (activeIndex > 0) {
+          var prevIdx = activeIndex - 1;
+          activateScreen(prevIdx);
+          var prevEl = screens[prevIdx];
+          if (isChapter(prevEl)) {
+            prevEl.scrollLeft = (chapterPageCount(prevEl) - 1) * pageWidth();
+            updatePageControls();
+            updateProgress();
+          }
+        }
+        return;
+      }
       active.scrollLeft += delta;
     },
     { passive: false }
   );
+
+  // Edge tap zones (pages mode): tapping the left ~30%/right ~30% of the
+  // screen turns a page, mirroring how Kindle/Apple Books/Kobo do it — no
+  // visible button to block text. A real tap is disambiguated from a drag
+  // or text selection by checking movement distance and elapsed time between
+  // pointerdown and pointerup; taps on an actual link/button are left alone
+  // so back-links, the TOC, etc. still work normally.
+  var tapStartX = null,
+    tapStartY = null,
+    tapStartTime = 0;
+  document.querySelector('.book').addEventListener('pointerdown', function (e) {
+    tapStartX = e.clientX;
+    tapStartY = e.clientY;
+    tapStartTime = Date.now();
+  });
+  document.querySelector('.book').addEventListener('pointerup', function (e) {
+    if (tapStartX == null) return;
+    var dx = e.clientX - tapStartX;
+    var dy = e.clientY - tapStartY;
+    var dt = Date.now() - tapStartTime;
+    tapStartX = null;
+    if (settings.mode !== 'pages') return;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10 || dt > 500) return;
+    if (e.target.closest && e.target.closest('a, button')) return;
+    var w = window.innerWidth;
+    if (e.clientX < w * 0.3) prevPage();
+    else if (e.clientX > w * 0.7) nextPage();
+  });
+
+  // Swipe past a chapter's last/first page (pages mode, touch): a native
+  // drag already pages within a chapter, but reaching the end and swiping
+  // again should carry through to the next/previous chapter, not just stop.
+  var chapterTouchStartX = null;
+  function onChapterTouchStart(e) {
+    if (settings.mode !== 'pages' || !e.touches || !e.touches.length) return;
+    chapterTouchStartX = e.touches[0].clientX;
+  }
+  function onChapterTouchEnd(e) {
+    if (chapterTouchStartX == null || settings.mode !== 'pages') return;
+    var el = e.currentTarget;
+    if (screens[activeIndex] !== el) {
+      chapterTouchStartX = null;
+      return;
+    }
+    var endX =
+      e.changedTouches && e.changedTouches.length ? e.changedTouches[0].clientX : chapterTouchStartX;
+    var dx = endX - chapterTouchStartX;
+    chapterTouchStartX = null;
+    var maxScroll = el.scrollWidth - el.clientWidth;
+    if (dx < -30 && el.scrollLeft >= maxScroll - 2) {
+      if (activeIndex < screens.length - 1) activateScreen(activeIndex + 1);
+    } else if (dx > 30 && el.scrollLeft <= 2) {
+      if (activeIndex > 0) {
+        var prevIdx = activeIndex - 1;
+        activateScreen(prevIdx);
+        var prevEl = screens[prevIdx];
+        if (isChapter(prevEl)) {
+          prevEl.scrollLeft = (chapterPageCount(prevEl) - 1) * pageWidth();
+          updatePageControls();
+          updateProgress();
+        }
+      }
+    }
+  }
 
   // Per-chapter scroll: live-update controls while dragging, then snap to the
   // nearest page once the scroll settles (scroll-snap is only a soft hint).
@@ -1425,6 +1558,7 @@
   var scrollTicking = false;
   var settleTimer = null;
   function onChapterScroll(e) {
+    if (settings.mode !== 'pages') return;
     var el = e.currentTarget;
     if (screens[activeIndex] !== el) return;
     if (!scrollTicking) {
@@ -1448,12 +1582,15 @@
   }
   for (var ci = 0; ci < chapters.length; ci++) {
     chapters[ci].addEventListener('scroll', onChapterScroll, { passive: true });
+    chapters[ci].addEventListener('touchstart', onChapterTouchStart, { passive: true });
+    chapters[ci].addEventListener('touchend', onChapterTouchEnd, { passive: true });
   }
 
   // Resize / settings-change resync: font-size and viewport changes reflow a
   // chapter's page count, so re-locate the saved position rather than trust
   // any previously-computed page index.
   function resyncActiveChapterPosition() {
+    if (settings.mode !== 'pages') return;
     var active = screens[activeIndex];
     if (!isChapter(active)) {
       updatePageControls();
@@ -1483,14 +1620,86 @@
     resizeTimer = setTimeout(resyncActiveChapterPosition, 150);
   });
 
+  // ---------- Scroll mode: the original continuous-scroll tracking ----------
+  // Kept alongside the pages-mode logic above rather than replacing it, so
+  // switching modes in Settings doesn't need a page reload.
+  var scrollModeObserver = null;
+  function setupScrollModeObserver() {
+    if (scrollModeObserver || !('IntersectionObserver' in window)) return;
+    var sections = document.querySelectorAll('#cover, #toc, .chapter');
+    scrollModeObserver = new IntersectionObserver(
+      function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) {
+            currentSectionId = entries[i].target.id;
+            try {
+              localStorage.setItem(
+                PROGRESS_KEY,
+                JSON.stringify({ id: currentSectionId, ts: Date.now() })
+              );
+            } catch (e) {}
+          }
+        }
+      },
+      { rootMargin: '-40% 0px -55% 0px', threshold: 0 }
+    );
+    for (var i = 0; i < sections.length; i++) scrollModeObserver.observe(sections[i]);
+  }
+
+  function updateScrollModeProgress() {
+    if (!progressBar || settings.mode !== 'scroll') return;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = max > 0 ? Math.min(100, Math.max(0, (window.scrollY / max) * 100)) : 0;
+    progressBar.style.width = pct + '%';
+  }
+  var scrollModeTicking = false;
+  window.addEventListener(
+    'scroll',
+    function () {
+      if (settings.mode !== 'scroll' || scrollModeTicking) return;
+      scrollModeTicking = true;
+      requestAnimationFrame(function () {
+        updateScrollModeProgress();
+        scrollModeTicking = false;
+      });
+    },
+    { passive: true }
+  );
+
+  // Live-toggling between Scroll and Pages from the settings panel (no reload).
+  function onModeChange() {
+    if (settings.mode === 'pages') {
+      var idx = 0;
+      for (var i = 0; i < screens.length; i++) {
+        if (screens[i].id === currentSectionId) {
+          idx = i;
+          break;
+        }
+      }
+      activateScreen(idx, { updateHash: false });
+    } else {
+      setupScrollModeObserver();
+      var el = document.getElementById(currentSectionId);
+      if (el) el.scrollIntoView({ block: 'start' });
+      updateScrollModeProgress();
+    }
+  }
+
   // TOC / chapter-nav / back-link anchors are intercepted (not left as native
   // anchors) since inactive screens are display:none and can't be scrolled to.
   document.querySelector('.book').addEventListener('click', function (e) {
     var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
     if (!a) return;
     var id = a.getAttribute('href').slice(1);
-    if (!goToAnchorId(id)) return;
-    e.preventDefault();
+    if (settings.mode === 'pages') {
+      if (!goToAnchorId(id)) return;
+      e.preventDefault();
+    } else {
+      var target = document.getElementById(id);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   });
 
   // Resume pill (manual — never auto-scrolls)
@@ -1519,7 +1728,8 @@
         break;
       }
     }
-    if (targetIndex === -1 || targetIndex === activeIndex) return;
+    if (settings.mode === 'pages' && (targetIndex === -1 || targetIndex === activeIndex)) return;
+    if (settings.mode !== 'pages' && !document.getElementById(saved.id)) return;
 
     var pill = document.getElementById('resumePill');
     var btn = document.getElementById('resumeBtn');
@@ -1530,10 +1740,15 @@
     pill.hidden = false;
 
     btn.addEventListener('click', function () {
-      activateScreen(targetIndex);
-      var el = screens[targetIndex];
-      if (isChapter(el) && saved.childIndex != null) {
-        scrollChapterToChild(el, saved.childIndex, 'smooth');
+      if (settings.mode === 'pages' && targetIndex !== -1) {
+        activateScreen(targetIndex);
+        var el = screens[targetIndex];
+        if (isChapter(el) && saved.childIndex != null) {
+          scrollChapterToChild(el, saved.childIndex, 'smooth');
+        }
+      } else {
+        var target = document.getElementById(saved.id);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       pill.hidden = true;
     });
@@ -1543,34 +1758,44 @@
   }
 
   // ---------- Initial activation ----------
-  var startIndex = 0;
-  var startChildIndex = -1;
-  if (location.hash) {
-    var hashId = location.hash.slice(1);
-    var hashMatched = false;
-    for (var si = 0; si < screens.length; si++) {
-      if (screens[si].id === hashId) {
-        startIndex = si;
-        hashMatched = true;
-        break;
+  if (settings.mode === 'pages') {
+    var startIndex = 0;
+    var startChildIndex = -1;
+    if (location.hash) {
+      var hashId = location.hash.slice(1);
+      var hashMatched = false;
+      for (var si = 0; si < screens.length; si++) {
+        if (screens[si].id === hashId) {
+          startIndex = si;
+          hashMatched = true;
+          break;
+        }
+      }
+      if (!hashMatched) {
+        var hashTarget = document.getElementById(hashId);
+        var hashChapter = hashTarget && hashTarget.closest('.chapter');
+        var hashIdx = hashChapter ? screens.indexOf(hashChapter) : -1;
+        if (hashIdx !== -1) {
+          startIndex = hashIdx;
+          startChildIndex = findResumableIndex(hashChapter, hashId);
+        }
       }
     }
-    if (!hashMatched) {
-      var hashTarget = document.getElementById(hashId);
-      var hashChapter = hashTarget && hashTarget.closest('.chapter');
-      var hashIdx = hashChapter ? screens.indexOf(hashChapter) : -1;
-      if (hashIdx !== -1) {
-        startIndex = hashIdx;
-        startChildIndex = findResumableIndex(hashChapter, hashId);
-      }
+    activateScreen(startIndex, { updateHash: false });
+    if (startChildIndex !== -1) {
+      var startEl = screens[startIndex];
+      requestAnimationFrame(function () {
+        scrollChapterToChild(startEl, startChildIndex, 'auto');
+      });
     }
-  }
-  activateScreen(startIndex, { updateHash: false });
-  if (startChildIndex !== -1) {
-    var startEl = screens[startIndex];
-    requestAnimationFrame(function () {
-      scrollChapterToChild(startEl, startChildIndex, 'auto');
-    });
+  } else {
+    updatePageControls();
+    setupScrollModeObserver();
+    updateScrollModeProgress();
+    if (location.hash) {
+      var hashScrollTarget = document.getElementById(location.hash.slice(1));
+      if (hashScrollTarget) hashScrollTarget.scrollIntoView({ block: 'start' });
+    }
   }
   initResumePill();
 })();
