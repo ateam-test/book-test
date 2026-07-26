@@ -627,6 +627,7 @@
   <section class="contents" id="toc">
     <h2>Contents</h2>
 
+    <!-- TOC:START -->
     <a class="toc-entry" href="#chapter-1">
       <span class="toc-head">
         <span class="toc-title">I &middot; The Ember Gate</span>
@@ -650,8 +651,10 @@
       </span>
       <span class="toc-teaser">The library keeps one book that isn't on any shelf.</span>
     </a>
+    <!-- TOC:END -->
   </section>
 
+  <!-- CHAPTERS:START -->
   <section class="chapter" id="chapter-1">
     <a class="back-link" href="#toc">&larr; Contents</a>
     <h2>I &middot; The Ember Gate</h2>
@@ -734,6 +737,7 @@
       <span class="disabled">Next &rarr;</span>
     </div>
   </section>
+  <!-- CHAPTERS:END -->
 
   <div class="colophon">
     <svg class="seal" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -893,12 +897,12 @@
   }
 
   // Resume pill (manual — never auto-scrolls)
-  var CHAPTER_LABELS = {
+  var CHAPTER_LABELS = /* CHAPTER_LABELS:START */{
     'chapter-1': 'Chapter I',
     'chapter-2': 'Chapter II',
     'chapter-3': 'Chapter III',
     toc: 'Contents',
-  };
+  }/* CHAPTER_LABELS:END */;
 
   function initResumePill() {
     if (location.hash) return;
