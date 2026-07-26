@@ -118,12 +118,9 @@ def build_regions(chapters):
         )
         toc_blocks.append(
             '    <a class="toc-entry" href="#{slug}">\n'
-            '      <span class="toc-head">\n'
-            '        <span class="toc-title">{title}</span>\n'
-            '        <span class="toc-num">Ch. {num:02d}</span>\n'
-            "      </span>\n"
+            '      <span class="toc-title">{title}</span>\n'
             "{teaser}"
-            "    </a>".format(slug=slug, title=display_title, num=num, teaser=teaser_line)
+            "    </a>".format(slug=slug, title=display_title, teaser=teaser_line)
         )
 
         paragraphs = ch["paragraphs"] or ["&nbsp;"]

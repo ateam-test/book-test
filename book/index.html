@@ -271,25 +271,11 @@
     color: inherit;
   }
   .toc-entry:first-child { padding-top: 0; }
-  .toc-entry .toc-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
-  }
   .toc-entry .toc-title {
     font-family: var(--font-display);
     font-size: 1.15rem;
     letter-spacing: 0.03em;
     color: var(--forest);
-  }
-  .toc-entry .toc-num {
-    font-family: var(--font-utility);
-    font-variant-numeric: tabular-nums;
-    font-size: 0.75rem;
-    letter-spacing: 0.15em;
-    color: var(--ink-soft);
-    white-space: nowrap;
   }
   .toc-entry .toc-teaser {
     font-size: calc(0.9rem * var(--reader-scale));
@@ -655,10 +641,6 @@
     }
     .byline { letter-spacing: 0.12em; }
     .divider { letter-spacing: 0.7em; }
-    .toc-entry .toc-head {
-      flex-wrap: wrap;
-      row-gap: 0.15rem;
-    }
   }
 </style>
 
@@ -747,42 +729,27 @@
 
     <!-- TOC:START -->
     <a class="toc-entry" href="#chapter-1">
-      <span class="toc-head">
-        <span class="toc-title">I &middot; The Arrow</span>
-        <span class="toc-num">Ch. 01</span>
-      </span>
+      <span class="toc-title">I &middot; The Arrow</span>
       <span class="toc-teaser">An arrow through my leg interrupts a beautiful day</span>
     </a>
 
     <a class="toc-entry" href="#chapter-2">
-      <span class="toc-head">
-        <span class="toc-title">II &middot; My Captor</span>
-        <span class="toc-num">Ch. 02</span>
-      </span>
+      <span class="toc-title">II &middot; My Captor</span>
       <span class="toc-teaser">My disfigured captor steals my Charm, gaining near-complete control</span>
     </a>
 
     <a class="toc-entry" href="#chapter-3">
-      <span class="toc-head">
-        <span class="toc-title">III &middot; New Living Quarters</span>
-        <span class="toc-num">Ch. 03</span>
-      </span>
+      <span class="toc-title">III &middot; New Living Quarters</span>
       <span class="toc-teaser">I cause the jerk some pain and get thrown into a dungeon for my troubles.</span>
     </a>
 
     <a class="toc-entry" href="#chapter-4">
-      <span class="toc-head">
-        <span class="toc-title">IV &middot; Preparing for a New Chapter</span>
-        <span class="toc-num">Ch. 04</span>
-      </span>
+      <span class="toc-title">IV &middot; Preparing for a New Chapter</span>
       <span class="toc-teaser">I explain the need for a new chapter</span>
     </a>
 
     <a class="toc-entry" href="#chapter-5">
-      <span class="toc-head">
-        <span class="toc-title">V &middot; A surreal Reality</span>
-        <span class="toc-num">Ch. 05</span>
-      </span>
+      <span class="toc-title">V &middot; A surreal Reality</span>
       <span class="toc-teaser">A real monster, less human than I</span>
     </a>
     <!-- TOC:END -->
