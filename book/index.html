@@ -443,6 +443,49 @@
   .divider::after {
     content: "\2766";
   }
+
+  /* ---------- Chapter-opener illustration ----------
+     Full chapter-title artwork (title baked into the image itself), shown
+     in place of the plain text heading. The h2 stays in the DOM as sr-only
+     so the chapter title is still announced to screen readers and still
+     resolvable by anchor links / the resume pill. */
+  .chapter-opener {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 0 2.5rem;
+  }
+  .chapter-opener img {
+    display: block;
+    width: 100%;
+    max-width: 380px;
+    height: auto;
+    aspect-ratio: 1024 / 1536;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--rule);
+    box-shadow: 0 22px 44px -16px var(--shadow), 0 6px 14px -6px var(--shadow);
+  }
+  [data-reader-mode="pages"] .chapter-opener {
+    min-height: calc(100dvh - var(--footer-h) - 6rem);
+  }
+  [data-reader-mode="pages"] .chapter-opener img {
+    width: auto;
+    height: 100%;
+    max-width: min(420px, 78vw);
+    max-height: calc(100dvh - var(--footer-h) - 6rem);
+  }
+  /* The sr-only heading after a chapter-opener is still positioned via its
+     "static position" for column-fragmentation purposes even though it's
+     out of flow. Left with no explicit offset, that confuses the multicol
+     engine into reserving a whole blank column between the opener and the
+     part-title's forced break. Pinning top/left removes the ambiguity;
+     break-after: auto drops the inherited avoid-column that compounded it. */
+  .chapter h2.sr-only {
+    top: 0;
+    left: 0;
+    break-after: auto;
+  }
   .chapter p {
     font-size: calc(1.08rem * var(--reader-scale));
     line-height: var(--reader-leading);
@@ -808,7 +851,7 @@
     </div>
     <h1 class="sr-only">The Ashbound Heir</h1>
     <p class="tagline">
-      The gate remembers every hand that opens it. It has just remembered his.
+      First came the arrow. Then came the answers she never wanted.
     </p>
     <p class="byline">Draft manuscript &middot; <em>working title</em></p>
     <button type="button" class="scroll-cue" id="scrollCue">&darr; contents</button>
@@ -849,8 +892,10 @@
   <!-- CHAPTERS:START -->
   <section class="chapter" id="chapter-1">
     <a class="back-link" href="#toc">&larr; Contents</a>
-    <h2>Chapter 1</h2>
-    <div class="divider"></div>
+    <div class="chapter-opener">
+      <img src="assets/Chapter-1.png" alt="Chapter 1: The Arrow" width="1024" height="1536" loading="lazy" />
+    </div>
+    <h2 class="sr-only">Chapter 1</h2>
     <h3 class="part-title" id="chapter-1-part-1">Part 1 &middot; The Arrow</h3>
     <p class="lede">
       It was the most beautiful day EVER. All my life I had always been kept away in a cave, sleeping on the hard rock with only my arms for a pillow. For the first time in months, I stepped out into the warming sunlight. The little birds chattered in their happy songs, smiling at the batty moths that flew past them.
@@ -1033,8 +1078,10 @@
 
   <section class="chapter" id="chapter-2">
     <a class="back-link" href="#toc">&larr; Contents</a>
-    <h2>Chapter 2</h2>
-    <div class="divider"></div>
+    <div class="chapter-opener">
+      <img src="assets/Chapter-2.png" alt="Chapter 2: A surreal Reality" width="1024" height="1536" loading="lazy" />
+    </div>
+    <h2 class="sr-only">Chapter 2</h2>
     <h3 class="part-title" id="chapter-2-part-1">Part 1 &middot; A surreal Reality</h3>
     <p class="lede">
       There is no need to describe the intense moment of panic I felt as the blood ran cold in my veins. Without my Charm or a willing Source, I had nothing to reach for and felt powerless to quell my fears and confront whatever monster was before me.

@@ -31,6 +31,7 @@ from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
 INDEX_PATH = os.path.join(os.path.dirname(__file__), "..", "book", "index.html")
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "..", "book", "assets")
 
 ROMAN_TABLE = [
     (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
@@ -139,6 +140,22 @@ def part_label_for(num, title):
     return "Part %d" % num
 
 
+def chapter_opener_html(num, raw_title):
+    """If book/assets/Chapter-<num>.png exists, it's a full title-card
+    illustration (the chapter title is baked into the artwork), shown in
+    place of the plain text heading. Falls back to the ordinary <h2> +
+    divider when no matching image has been dropped into assets/."""
+    image_name = "Chapter-%d.png" % num
+    if not os.path.isfile(os.path.join(ASSETS_DIR, image_name)):
+        return ""
+    alt = html.escape("Chapter %d: %s" % (num, raw_title))
+    return (
+        '    <div class="chapter-opener">\n'
+        '      <img src="assets/{img}" alt="{alt}" width="1024" height="1536" loading="lazy" />\n'
+        "    </div>"
+    ).format(img=image_name, alt=alt)
+
+
 def build_regions(chapters):
     toc_blocks = []
     chapter_blocks = []
@@ -242,11 +259,20 @@ def build_regions(chapters):
             else '<span class="disabled">Next &rarr;</span>'
         )
 
+        opener_html = chapter_opener_html(num, ch["title"])
+        heading_html = (
+            '    <h2 class="sr-only">{title}</h2>'.format(title=chapter_label)
+            if opener_html
+            else '    <h2>{title}</h2>\n    <div class="divider"></div>'.format(
+                title=chapter_label
+            )
+        )
+
         chapter_blocks.append(
             '  <section class="chapter" id="{slug}">\n'
             '    <a class="back-link" href="#toc">&larr; Contents</a>\n'
-            "    <h2>{title}</h2>\n"
-            '    <div class="divider"></div>\n'
+            "{opener}"
+            "{heading}\n"
             "{body}\n"
             '    <div class="chapter-nav">\n'
             "      {prev}\n"
@@ -254,7 +280,12 @@ def build_regions(chapters):
             "      {next}\n"
             "    </div>\n"
             "  </section>".format(
-                slug=slug, title=chapter_label, body=body_html, prev=prev_link, next=next_link
+                slug=slug,
+                opener=(opener_html + "\n" if opener_html else ""),
+                heading=heading_html,
+                body=body_html,
+                prev=prev_link,
+                next=next_link,
             )
         )
 
