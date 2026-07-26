@@ -467,13 +467,18 @@
     box-shadow: 0 22px 44px -16px var(--shadow), 0 6px 14px -6px var(--shadow);
   }
   [data-reader-mode="pages"] .chapter-opener {
-    min-height: calc(100dvh - var(--footer-h) - 6rem);
+    min-height: 62dvh;
   }
   [data-reader-mode="pages"] .chapter-opener img {
     width: auto;
-    height: 100%;
+    height: auto;
     max-width: min(420px, 78vw);
-    max-height: calc(100dvh - var(--footer-h) - 6rem);
+    /* Deliberately short of the full column height (viewport minus the
+       chapter's own top/bottom padding) rather than an exact fill — flush
+       against that boundary trips a multicol rounding edge case where the
+       part-title's forced break lands one column later than expected,
+       leaving a blank page between the opener and the chapter text. */
+    max-height: 62dvh;
   }
   /* The sr-only heading after a chapter-opener is still positioned via its
      "static position" for column-fragmentation purposes even though it's
