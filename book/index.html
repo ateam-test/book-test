@@ -138,19 +138,19 @@
   }
 
   /* ---------- Pagination: one full-viewport "screen" visible at a time ---------- */
-  /* Gated behind [data-pagination="on"], set by the early script before paint. If JS
+  /* Gated behind [data-reader-mode="pages"], set by the early script before paint. If JS
      never runs, none of this applies and the site falls back to continuous scroll. */
-  [data-pagination="on"] .book > section {
+  [data-reader-mode="pages"] .book > section {
     display: none;
   }
-  [data-pagination="on"] .book > section[data-active] {
+  [data-reader-mode="pages"] .book > section[data-active] {
     display: block;
   }
-  [data-pagination="on"] .book > section.cover[data-active] {
+  [data-reader-mode="pages"] .book > section.cover[data-active] {
     display: flex;
   }
-  [data-pagination="on"] .contents,
-  [data-pagination="on"] .colophon {
+  [data-reader-mode="pages"] .contents,
+  [data-reader-mode="pages"] .colophon {
     height: 100vh;
     height: 100dvh;
     overflow-y: auto;
@@ -283,6 +283,46 @@
     color: var(--ink-soft);
   }
 
+  /* A chapter split into named "parts" (Heading 2 in the doc) renders as a
+     group: the chapter label, then each part as its own nested, clickable
+     sub-entry — instead of one flat toc-entry. */
+  .toc-group {
+    padding: 1.1rem 0;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .toc-group:first-child { padding-top: 0; }
+  .toc-group-title {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    letter-spacing: 0.03em;
+    color: var(--forest);
+  }
+  .toc-group-teaser {
+    display: block;
+    font-size: calc(0.9rem * var(--reader-scale));
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-top: 0.2rem;
+  }
+  .toc-group .toc-entry {
+    padding: 0.7rem 0 0.7rem 1.1rem;
+    border-bottom: none;
+  }
+  .toc-group .toc-entry:not(:last-child) {
+    border-bottom: 1px dotted var(--rule);
+  }
+  .toc-group .toc-entry .toc-title {
+    font-family: var(--font-utility);
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .toc-group .toc-entry .toc-teaser {
+    font-size: calc(0.85rem * var(--reader-scale));
+  }
+
   /* ---------- Chapters ---------- */
   .chapter {
     max-width: 640px;
@@ -295,7 +335,7 @@
   /* Paginated mode: the chapter itself becomes a full-viewport multi-column
      pager (each column = one "page"); the 640px reading measure moves onto
      its direct children, since the container must span the full 100vw. */
-  [data-pagination="on"] .chapter {
+  [data-reader-mode="pages"] .chapter {
     max-width: none;
     margin: 0;
     padding: 3rem 0 2.5rem;
@@ -310,10 +350,10 @@
     scroll-snap-type: x proximity; /* soft hint only — JS owns the authoritative snap */
     scrollbar-width: none;
   }
-  [data-pagination="on"] .chapter::-webkit-scrollbar {
+  [data-reader-mode="pages"] .chapter::-webkit-scrollbar {
     display: none;
   }
-  [data-pagination="on"] .chapter > * {
+  [data-reader-mode="pages"] .chapter > * {
     max-width: 640px;
     margin-left: auto;
     margin-right: auto;
@@ -321,22 +361,26 @@
     padding-right: 1.5rem;
     box-sizing: border-box;
   }
-  [data-pagination="on"] .chapter p {
+  [data-reader-mode="pages"] .chapter p {
     orphans: 2;
     widows: 2;
   }
-  [data-pagination="on"] .chapter-nav,
-  [data-pagination="on"] .divider,
-  [data-pagination="on"] .placeholder-note {
+  [data-reader-mode="pages"] .chapter-nav,
+  [data-reader-mode="pages"] .divider,
+  [data-reader-mode="pages"] .placeholder-note {
     break-inside: avoid-column;
   }
-  [data-pagination="on"] .chapter h2,
-  [data-pagination="on"] .divider {
+  [data-reader-mode="pages"] .chapter h2,
+  [data-reader-mode="pages"] .chapter h3.part-title,
+  [data-reader-mode="pages"] .divider {
     break-after: avoid-column;
+  }
+  [data-reader-mode="pages"] .chapter h3.part-title {
+    break-before: column;
   }
   /* Escape hatch: flip to `float: none` if real-browser QA finds the floated
      drop cap misbehaving across a column break (Chromium testing was clean). */
-  [data-pagination="on"] .chapter p.lede::first-letter {
+  [data-reader-mode="pages"] .chapter p.lede::first-letter {
     float: left;
   }
 
@@ -358,6 +402,19 @@
     letter-spacing: 0.12em;
     font-size: clamp(1.3rem, 3.4vw, 1.7rem);
     margin: 0 0 0.75rem;
+  }
+  /* A "part" (Heading 2 in the doc) — a named sub-section within a chapter.
+     In paginated mode each one starts on its own fresh page (see the
+     break-before rule below); in the continuous-scroll fallback it's just
+     a sub-heading. */
+  .chapter h3.part-title {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 0.1em;
+    font-size: clamp(1.05rem, 2.6vw, 1.25rem);
+    color: var(--gold);
+    margin: 2.5rem 0 1.25rem;
   }
   .divider {
     text-align: center;
@@ -392,20 +449,13 @@
     opacity: 0.6;
     margin: 2rem 0 0;
   }
+  /* Chapter-end Previous/Contents/Next links: superseded by the persistent
+     footer + edge taps (pages mode) and the footer/TOC (scroll mode), so
+     hidden in both. Kept in the DOM (CSS-hidden, not removed) since this
+     markup is regenerated by scripts/sync_from_doc.py on every Google Doc
+     sync — deleting it here wouldn't survive the next sync anyway. */
   .chapter-nav {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    row-gap: 0.75rem;
-    column-gap: 1rem;
-    margin-top: 2.5rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--rule);
-    font-family: var(--font-utility);
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    display: none;
   }
   .chapter-nav a, .chapter-nav span {
     display: inline-block;
@@ -654,7 +704,7 @@
     root.setAttribute('data-reader-font', s.font || 'serif');
     root.setAttribute('data-reader-size', s.size || 'm');
     root.setAttribute('data-reader-leading', s.leading || 'cozy');
-    root.setAttribute('data-pagination', 'on');
+    root.setAttribute('data-reader-mode', s.mode || 'pages');
   } catch (e) {}
 })();
 </script>
@@ -1144,6 +1194,7 @@
     return Array.prototype.filter.call(chapterEl.children, function (c) {
       return (
         c.tagName === 'H2' ||
+        c.tagName === 'H3' ||
         c.tagName === 'P' ||
         c.classList.contains('divider') ||
         c.classList.contains('placeholder-note') ||
@@ -1265,6 +1316,30 @@
       }
     }
     return false;
+  }
+
+  // A "part" anchor (e.g. #chapter-2-part-2) isn't its own screen — it lives
+  // inside its chapter's multi-column flow. Resolve it to the parent chapter,
+  // activate that, then page over to the part's column.
+  function findResumableIndex(chapterEl, targetId) {
+    var children = resumableChildren(chapterEl);
+    for (var i = 0; i < children.length; i++) {
+      if (children[i].id === targetId) return i;
+    }
+    return -1;
+  }
+
+  function goToAnchorId(id) {
+    if (goToScreenId(id)) return true;
+    var target = document.getElementById(id);
+    var chapterEl = target && target.closest('.chapter');
+    if (!chapterEl) return false;
+    var idx = screens.indexOf(chapterEl);
+    if (idx === -1) return false;
+    activateScreen(idx);
+    var childIndex = findResumableIndex(chapterEl, id);
+    if (childIndex !== -1) scrollChapterToChild(chapterEl, childIndex, 'auto');
+    return true;
   }
 
   function nextPage() {
@@ -1404,7 +1479,7 @@
     var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
     if (!a) return;
     var id = a.getAttribute('href').slice(1);
-    if (!goToScreenId(id)) return;
+    if (!goToAnchorId(id)) return;
     e.preventDefault();
   });
 
@@ -1459,16 +1534,34 @@
 
   // ---------- Initial activation ----------
   var startIndex = 0;
+  var startChildIndex = -1;
   if (location.hash) {
     var hashId = location.hash.slice(1);
+    var hashMatched = false;
     for (var si = 0; si < screens.length; si++) {
       if (screens[si].id === hashId) {
         startIndex = si;
+        hashMatched = true;
         break;
+      }
+    }
+    if (!hashMatched) {
+      var hashTarget = document.getElementById(hashId);
+      var hashChapter = hashTarget && hashTarget.closest('.chapter');
+      var hashIdx = hashChapter ? screens.indexOf(hashChapter) : -1;
+      if (hashIdx !== -1) {
+        startIndex = hashIdx;
+        startChildIndex = findResumableIndex(hashChapter, hashId);
       }
     }
   }
   activateScreen(startIndex, { updateHash: false });
+  if (startChildIndex !== -1) {
+    var startEl = screens[startIndex];
+    requestAnimationFrame(function () {
+      scrollChapterToChild(startEl, startChildIndex, 'auto');
+    });
+  }
   initResumePill();
 })();
 </script>

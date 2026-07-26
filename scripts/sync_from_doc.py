@@ -5,11 +5,16 @@ Doc convention (writer-facing):
   - Heading 1 = start of a new chapter. Its text becomes the chapter title
     (no need to type "Chapter IV" or roman numerals — those are added
     automatically based on the chapter's position in the doc).
-  - The paragraph immediately after a Heading 1, if entirely italicized,
-    becomes the one-line teaser shown in the table of contents. It is not
-    included in the chapter body. This paragraph is optional.
-  - Every other paragraph under a heading becomes chapter body text.
-    Bold/italic formatting is preserved.
+  - Heading 2, if used within a chapter, splits it into named "parts" — each
+    becomes its own page when reading, with its own sub-heading. Give each
+    Heading 2 just its descriptive text (e.g. "My Captor"), not "Part 1: My
+    Captor" — parts are numbered automatically, same as chapters.
+  - The paragraph immediately after a Heading 1 or Heading 2, if entirely
+    italicized, becomes the one-line teaser shown in the table of contents
+    for that chapter or part. It is not included in the visible text. This
+    paragraph is optional.
+  - Every other paragraph becomes body text. Bold/italic formatting is
+    preserved.
 
 Authenticates via Application Default Credentials — in CI this is populated by
 the google-github-actions/auth step (Workload Identity Federation, no key file).
@@ -79,6 +84,7 @@ def render_paragraph(elements):
 def parse_chapters(doc):
     chapters = []
     current = None
+    current_part = None
     for item in doc.get("body", {}).get("content", []):
         para = item.get("paragraph")
         if not para:
@@ -88,16 +94,27 @@ def parse_chapters(doc):
         if not plain:
             continue
         if style == "HEADING_1":
-            current = {"title": plain, "teaser": "", "paragraphs": []}
+            current = {"title": plain, "teaser": "", "paragraphs": [], "parts": []}
             chapters.append(current)
+            current_part = None
             continue
         if current is None:
             continue
-        if not current["paragraphs"] and not current["teaser"] and all_italic:
-            current["teaser"] = plain
+        if style == "HEADING_2":
+            current_part = {"title": plain, "teaser": "", "paragraphs": []}
+            current["parts"].append(current_part)
             continue
-        current["paragraphs"].append(rendered)
+        target = current_part if current_part is not None else current
+        if not target["paragraphs"] and not target["teaser"] and all_italic:
+            target["teaser"] = plain
+            continue
+        target["paragraphs"].append(rendered)
     return chapters
+
+
+def render_paragraph_block(text, is_lede):
+    cls = ' class="lede"' if is_lede else ""
+    return '    <p{cls}>\n      {text}\n    </p>'.format(cls=cls, text=text)
 
 
 def build_regions(chapters):
@@ -109,27 +126,88 @@ def build_regions(chapters):
         num = i + 1
         roman = to_roman(num)
         slug = "chapter-%d" % num
-        display_title = "%s &middot; %s" % (roman, html.escape(ch["title"]))
-
-        teaser_line = (
-            '      <span class="toc-teaser">%s</span>\n' % html.escape(ch["teaser"])
-            if ch["teaser"]
-            else ""
-        )
-        toc_blocks.append(
-            '    <a class="toc-entry" href="#{slug}">\n'
-            '      <span class="toc-title">{title}</span>\n'
-            "{teaser}"
-            "    </a>".format(slug=slug, title=display_title, teaser=teaser_line)
+        has_parts = bool(ch["parts"])
+        chapter_label = (
+            html.escape(ch["title"])
+            if has_parts
+            else "%s &middot; %s" % (roman, html.escape(ch["title"]))
         )
 
-        paragraphs = ch["paragraphs"] or ["&nbsp;"]
-        body_html = "\n".join(
-            '    <p{cls}>\n      {text}\n    </p>'.format(
-                cls=' class="lede"' if j == 0 else "", text=p
+        # ---- Table of contents ----
+        if has_parts:
+            group_teaser_line = (
+                '      <span class="toc-group-teaser">%s</span>\n' % html.escape(ch["teaser"])
+                if ch["teaser"]
+                else ""
             )
-            for j, p in enumerate(paragraphs)
-        )
+            part_entries = []
+            for j, part in enumerate(ch["parts"]):
+                part_num = j + 1
+                part_slug = "%s-part-%d" % (slug, part_num)
+                part_title = "Part %d &middot; %s" % (part_num, html.escape(part["title"]))
+                part_teaser_line = (
+                    '        <span class="toc-teaser">%s</span>\n' % html.escape(part["teaser"])
+                    if part["teaser"]
+                    else ""
+                )
+                part_entries.append(
+                    '      <a class="toc-entry" href="#{part_slug}">\n'
+                    '        <span class="toc-title">{title}</span>\n'
+                    "{teaser}"
+                    "      </a>".format(
+                        part_slug=part_slug, title=part_title, teaser=part_teaser_line
+                    )
+                )
+            toc_blocks.append(
+                '    <div class="toc-group">\n'
+                '      <span class="toc-group-title">{label}</span>\n'
+                "{group_teaser}"
+                "{parts}\n"
+                "    </div>".format(
+                    label=chapter_label,
+                    group_teaser=group_teaser_line,
+                    parts="\n".join(part_entries),
+                )
+            )
+        else:
+            teaser_line = (
+                '      <span class="toc-teaser">%s</span>\n' % html.escape(ch["teaser"])
+                if ch["teaser"]
+                else ""
+            )
+            toc_blocks.append(
+                '    <a class="toc-entry" href="#{slug}">\n'
+                '      <span class="toc-title">{title}</span>\n'
+                "{teaser}"
+                "    </a>".format(slug=slug, title=chapter_label, teaser=teaser_line)
+            )
+
+        # ---- Chapter body ----
+        if has_parts:
+            body_parts = [
+                render_paragraph_block(p, k == 0) for k, p in enumerate(ch["paragraphs"])
+            ]
+            for j, part in enumerate(ch["parts"]):
+                part_num = j + 1
+                part_slug = "%s-part-%d" % (slug, part_num)
+                part_title = "Part %d &middot; %s" % (part_num, html.escape(part["title"]))
+                body_parts.append(
+                    '    <h3 class="part-title" id="{id}">{title}</h3>'.format(
+                        id=part_slug, title=part_title
+                    )
+                )
+                part_paragraphs = part["paragraphs"] or ["&nbsp;"]
+                body_parts.extend(
+                    render_paragraph_block(p, k == 0) for k, p in enumerate(part_paragraphs)
+                )
+            if not body_parts:
+                body_parts.append(render_paragraph_block("&nbsp;", True))
+            body_html = "\n".join(body_parts)
+        else:
+            paragraphs = ch["paragraphs"] or ["&nbsp;"]
+            body_html = "\n".join(
+                render_paragraph_block(p, k == 0) for k, p in enumerate(paragraphs)
+            )
 
         prev_link = (
             '<a href="#chapter-%d">&larr; Previous</a>' % (num - 1)
@@ -154,7 +232,7 @@ def build_regions(chapters):
             "      {next}\n"
             "    </div>\n"
             "  </section>".format(
-                slug=slug, title=display_title, body=body_html, prev=prev_link, next=next_link
+                slug=slug, title=chapter_label, body=body_html, prev=prev_link, next=next_link
             )
         )
 
