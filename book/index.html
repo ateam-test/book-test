@@ -1278,13 +1278,15 @@
   // deliberately coarse (nearest paragraph, not an exact character offset).
   function resumableChildren(chapterEl) {
     return Array.prototype.filter.call(chapterEl.children, function (c) {
+      // .chapter-nav is always display:none (superseded by the persistent
+      // footer) — its offsetLeft is always 0, which would make it look like
+      // the nearest match for any scroll position and corrupt saved progress.
       return (
         c.tagName === 'H2' ||
         c.tagName === 'H3' ||
         c.tagName === 'P' ||
         c.classList.contains('divider') ||
-        c.classList.contains('placeholder-note') ||
-        c.classList.contains('chapter-nav')
+        c.classList.contains('placeholder-note')
       );
     });
   }
