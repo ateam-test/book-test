@@ -13,6 +13,14 @@ Doc convention (writer-facing):
     italicized, becomes the one-line teaser shown in the table of contents
     for that chapter or part. It is not included in the visible text. This
     paragraph is optional.
+  - A paragraph reading "Publish: <date>" placed right after a Heading 1 or
+    Heading 2 (before or after the teaser line, order doesn't matter)
+    schedules that chapter or part to go live on that date. "2026-07-01" or
+    "July 1, 2026" both work. Until then it's left out of the site entirely
+    — not just hidden, absent from the HTML — so nothing leaks early. Once
+    the date has passed, the next sync (the GitHub Action runs every 6
+    hours, or can be triggered manually) picks it up automatically. Omit
+    this line to publish immediately, as before.
   - Every other paragraph becomes body text. Bold/italic formatting is
     preserved.
 
@@ -25,6 +33,7 @@ Requires env var:
 import html
 import os
 import re
+from datetime import datetime, timezone
 
 import google.auth
 from googleapiclient.discovery import build
@@ -82,6 +91,9 @@ def render_paragraph(elements):
     return "".join(html_parts).strip(), plain, all_italic
 
 
+PUBLISH_RE = re.compile(r"^publish\s*:\s*(.+?)\s*$", re.IGNORECASE)
+
+
 def parse_chapters(doc):
     chapters = []
     current = None
@@ -95,22 +107,87 @@ def parse_chapters(doc):
         if not plain:
             continue
         if style == "HEADING_1":
-            current = {"title": plain, "teaser": "", "paragraphs": [], "parts": []}
+            current = {
+                "title": plain, "teaser": "", "paragraphs": [], "parts": [],
+                "publish_date": None,
+            }
             chapters.append(current)
             current_part = None
             continue
         if current is None:
             continue
         if style == "HEADING_2":
-            current_part = {"title": plain, "teaser": "", "paragraphs": []}
+            current_part = {
+                "title": plain, "teaser": "", "paragraphs": [], "publish_date": None,
+            }
             current["parts"].append(current_part)
             continue
         target = current_part if current_part is not None else current
+        # The publish-date and teaser lines can appear in either order right
+        # after the heading, but both must precede any real body text.
+        if not target["paragraphs"]:
+            m = PUBLISH_RE.match(plain)
+            if m:
+                target["publish_date"] = m.group(1)
+                continue
         if not target["paragraphs"] and not target["teaser"] and all_italic:
             target["teaser"] = plain
             continue
         target["paragraphs"].append(rendered)
     return chapters
+
+
+# Accepted alongside the recommended ISO form, since writers naturally type
+# dates like "July 1, 2026" rather than "2026-07-01".
+PUBLISH_DATE_FORMATS = ["%Y-%m-%d", "%B %d, %Y", "%B %d %Y", "%d %B %Y", "%m/%d/%Y"]
+
+
+def parse_publish_date(raw):
+    for fmt in PUBLISH_DATE_FORMATS:
+        try:
+            return datetime.strptime(raw, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def is_available(publish_date, today, label):
+    """A missing date publishes immediately. An unparseable date fails closed
+    (treated as not yet available) rather than risking an early leak from a
+    typo — but it's logged so a stuck chapter doesn't go unnoticed."""
+    if not publish_date:
+        return True
+    target = parse_publish_date(publish_date)
+    if target is None:
+        print(
+            "Warning: %s has an unparseable Publish date (%r) — "
+            "keeping it unpublished until fixed." % (label, publish_date)
+        )
+        return False
+    return today >= target
+
+
+def filter_unpublished(chapters, today):
+    """Drop chapters/parts whose publish date hasn't arrived yet. Numbering
+    (and part-numbering within a chapter) is based on what's left, exactly
+    as if the unpublished ones weren't in the doc at all — so releasing
+    strictly in doc order (the normal case) keeps stable chapter numbers."""
+    kept = []
+    for ch in chapters:
+        if not is_available(ch["publish_date"], today, "Chapter %r" % ch["title"]):
+            continue
+        available_parts = [
+            part for part in ch["parts"]
+            if is_available(part["publish_date"], today, "Part %r" % part["title"])
+        ]
+        if ch["parts"] and not available_parts and not ch["paragraphs"]:
+            # Every part is still embargoed and there's no chapter-level text
+            # of its own — nothing to show, so skip the chapter entirely
+            # rather than publish an empty page.
+            continue
+        ch = dict(ch, parts=available_parts)
+        kept.append(ch)
+    return kept
 
 
 def render_paragraph_block(text, is_lede):
@@ -306,6 +383,12 @@ def main():
     chapters = parse_chapters(doc)
     if not chapters:
         print("No chapters found (no Heading 1 paragraphs in the doc) — leaving site untouched.")
+        return
+
+    today = datetime.now(timezone.utc).date()
+    chapters = filter_unpublished(chapters, today)
+    if not chapters:
+        print("No chapters are publish-eligible yet as of %s — leaving site untouched." % today)
         return
 
     toc_html, chapters_html, labels_js = build_regions(chapters)
